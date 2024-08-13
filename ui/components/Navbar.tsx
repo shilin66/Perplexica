@@ -49,16 +49,16 @@ const Navbar = ({ messages }: { messages: Message[] }) => {
       </div>
       <p className="hidden lg:flex">{title}</p>
 
-      <div className="flex flex-row items-center space-x-4">
-        <Share
-          size={17}
-          className="active:scale-95 transition duration-100 cursor-pointer"
-        />
-        <Trash
-          size={17}
-          className="text-red-400 active:scale-95 transition duration-100 cursor-pointer"
-        />
-      </div>
+      {/*<div className="flex flex-row items-center space-x-4">*/}
+      {/*  <Share*/}
+      {/*    size={17}*/}
+      {/*    className="active:scale-95 transition duration-100 cursor-pointer"*/}
+      {/*  />*/}
+      {/*  <Trash*/}
+      {/*    size={17}*/}
+      {/*    className="text-red-400 active:scale-95 transition duration-100 cursor-pointer"*/}
+      {/*  />*/}
+      {/*</div>*/}
     </div>
   );
 };

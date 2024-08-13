@@ -17,6 +17,8 @@ interface Config {
   API_ENDPOINTS: {
     SEARXNG: string;
     OLLAMA: string;
+    FASTGPT_URL: string;
+    OPENAI_BASE_URL: string;
   };
 }
 
@@ -43,6 +45,14 @@ export const getAnthropicApiKey = () => loadConfig().API_KEYS.ANTHROPIC;
 export const getSearxngApiEndpoint = () => loadConfig().API_ENDPOINTS.SEARXNG;
 
 export const getOllamaApiEndpoint = () => loadConfig().API_ENDPOINTS.OLLAMA;
+
+export const getFastGptEndpoint = () => loadConfig().API_ENDPOINTS.FASTGPT_URL;
+
+export const getOpenaiBaseUrl = () => {
+  const openaiBaseUrl = loadConfig().API_ENDPOINTS.OPENAI_BASE_URL;
+  // 如果没有配置，则使用默认值
+  return openaiBaseUrl || 'https://api.openai.com/v1';
+};
 
 export const updateConfig = (config: RecursivePartial<Config>) => {
   const currentConfig = loadConfig();
