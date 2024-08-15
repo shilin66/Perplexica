@@ -95,7 +95,7 @@ const useSocket = (
           if (!chatModel || !chatModelProvider) {
             const chatModelProviders = providers.chatModelProviders;
 
-            chatModelProvider = Object.keys(chatModelProviders)[0];
+            chatModelProvider = 'openai';
 
             if (chatModelProvider === 'custom_openai') {
               toast.error('Seems like you are using the custom OpenAI provider, please open the settings and configure the API key and base URL');
@@ -120,7 +120,7 @@ const useSocket = (
             )
               return toast.error('No embedding models available');
 
-            embeddingModelProvider = Object.keys(embeddingModelProviders)[0];
+            embeddingModelProvider = 'openai';
             embeddingModel = Object.keys(
               embeddingModelProviders[embeddingModelProvider],
             )[0];
