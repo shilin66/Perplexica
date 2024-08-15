@@ -31,13 +31,13 @@ services:
     build:
       context: .
       dockerfile: app.dockerfile
-      args:
-        - NEXT_PUBLIC_API_URL=http://127.0.0.1:3001/api
-        - NEXT_PUBLIC_WS_URL=ws://127.0.0.1:3001
     depends_on:
       - perplexica-backend
     ports:
       - 3000:3000
+    environment:
+      - NEXT_PUBLIC_API_URL=https://zenai.zenlayer.win:3003/api
+      - NEXT_PUBLIC_WS_URL=wss://zenai.zenlayer.win:3003
     networks:
       - perplexica-network
     restart: unless-stopped
