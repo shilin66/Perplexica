@@ -104,6 +104,17 @@ export const handleMessage = async (
 ) => {
   try {
     const parsedWSMessage = JSON.parse(message) as WSMessage;
+    //如果type等于heartbeat
+    if (parsedWSMessage.type === 'heartbeat') {
+      ws.send(
+        JSON.stringify({
+          type: 'heartbeat',
+          data: 'pong',
+        }),
+      );
+      return;
+    }
+
     const parsedMessage = parsedWSMessage.message;
 
     const id = crypto.randomBytes(7).toString('hex');

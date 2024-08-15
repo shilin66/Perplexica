@@ -1,7 +1,7 @@
 import { ChatOpenAI, OpenAIEmbeddings } from '@langchain/openai';
-import {getOpenaiApiKey, getOpenaiBaseUrl} from '../../config';
+import { getOpenaiApiKey, getOpenaiBaseUrl } from '../../config';
 import logger from '../../utils/logger';
-import {getFastGptInitData} from "../fastgpt";
+import { getFastGptInitData } from '../fastgpt';
 
 export const loadOpenAIChatModels = async () => {
   const openAIApiKey = getOpenaiApiKey();
@@ -10,11 +10,14 @@ export const loadOpenAIChatModels = async () => {
     const gptModels = await getFastGptInitData();
     const chatModels = {};
     gptModels.llmModels.forEach((llmModel) => {
-        chatModels[llmModel] = new ChatOpenAI({
-            openAIApiKey,
-            modelName: llmModel,
-            temperature: 0.7,
-        },{baseURL: getOpenaiBaseUrl()});
+      chatModels[llmModel] = new ChatOpenAI(
+        {
+          openAIApiKey,
+          modelName: llmModel,
+          temperature: 0.7,
+        },
+        { baseURL: getOpenaiBaseUrl() },
+      );
     });
     return chatModels;
   } catch (err) {
@@ -32,10 +35,13 @@ export const loadOpenAIEmbeddingsModels = async () => {
     const embModels = await getFastGptInitData();
     const embeddingModels = {};
     embModels.embeddingModels.forEach((embeddingModel) => {
-        embeddingModels[embeddingModel] = new OpenAIEmbeddings({
-            openAIApiKey,
-            modelName: embeddingModel,
-        });
+      embeddingModels[embeddingModel] = new OpenAIEmbeddings(
+        {
+          openAIApiKey,
+          modelName: embeddingModel,
+        },
+        { baseURL: getOpenaiBaseUrl() },
+      );
     });
     return embeddingModels;
   } catch (err) {

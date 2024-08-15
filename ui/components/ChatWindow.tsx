@@ -30,6 +30,45 @@ const useSocket = (
 
   useEffect(() => {
     if (!ws) {
+      let lastActivity = Date.now();
+      let heartbeatInterval: any = null;
+      let heartbeatTimeout: any = null;
+      const checkActivity = (ws: WebSocket) => {
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          const now = Date.now();
+          if (now - lastActivity > 60000) {
+            // 如果超过1分钟没有活动，开始心跳
+            if (!heartbeatInterval) {
+              console.log('Starting heartbeat interval');
+              ws.send(
+                  JSON.stringify({
+                    type: 'heartbeat',
+                    message: {
+                      content: 'ping',
+                    },
+                  }),
+              );
+              heartbeatInterval = setInterval(() => {
+                ws.send(
+                    JSON.stringify({
+                      type: 'heartbeat',
+                      message: {
+                        content: 'ping',
+                      },
+                    }),
+                );
+              }, 30000); // 每30秒发送一次心跳
+            }
+          } else {
+            // 如果活动时间小于一分钟，清除心跳定时器
+            if (heartbeatInterval) {
+              console.log('Clearing heartbeat interval');
+              clearInterval(heartbeatInterval);
+              heartbeatInterval = null;
+            }
+          }
+        }
+      };
       const connectWs = async () => {
         let chatModel = localStorage.getItem('chatModel');
         let chatModelProvider = localStorage.getItem('chatModelProvider');
@@ -171,12 +210,16 @@ const useSocket = (
 
         ws.onopen = () => {
           console.log('[DEBUG] open');
+          lastActivity = Date.now();
           clearTimeout(timeoutId);
           setIsWSReady(true);
+          // 设置心跳检查定时器
+          heartbeatTimeout = setInterval( () => checkActivity(ws), 10000); // 每10秒检查一次
         };
 
         ws.onerror = () => {
           clearTimeout(timeoutId);
+          lastActivity = Date.now();
           setError(true);
           toast.error('WebSocket connection error.');
         };
@@ -185,10 +228,23 @@ const useSocket = (
           clearTimeout(timeoutId);
           setError(true);
           console.log('[DEBUG] closed');
+          lastActivity = Date.now();
+          //清除定时器
+          if (heartbeatInterval) {
+            clearInterval(heartbeatInterval);
+            heartbeatInterval = null;
+          }
+          if (heartbeatTimeout) {
+            clearTimeout(heartbeatTimeout);
+            heartbeatTimeout = null;
+          }
         };
 
         ws.addEventListener('message', (e) => {
           const data = JSON.parse(e.data);
+          if (data.type !== 'heartbeat') {
+            lastActivity = Date.now();
+          }
           if (data.type === 'error') {
             toast.error(data.data);
           }
@@ -359,7 +415,10 @@ const ChatWindow = ({ id }: { id?: string }) => {
 
     const messageHandler = async (e: MessageEvent) => {
       const data = JSON.parse(e.data);
-
+      // 判断是否是心跳
+      if (data.type === 'heartbeat') {
+        return;
+      }
       if (data.type === 'error') {
         toast.error(data.data);
         setLoading(false);
