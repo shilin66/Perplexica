@@ -19,6 +19,7 @@ export const loadOpenAIChatModels = async () => {
         { baseURL: getOpenaiBaseUrl() },
       );
     });
+
     return chatModels;
   } catch (err) {
     logger.error(`Error loading OpenAI models: ${err}`);

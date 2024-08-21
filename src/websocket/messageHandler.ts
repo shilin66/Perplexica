@@ -45,6 +45,7 @@ const handleEmitterEvents = (
 ) => {
   let recievedMessage = '';
   let sources = [];
+  let searchPlan = {}
 
   emitter.on('data', (data) => {
     const parsedData = JSON.parse(data);
@@ -66,11 +67,30 @@ const handleEmitterEvents = (
         }),
       );
       sources = parsedData.data;
+    } else if (parsedData.type === 'searchPlan') {
+        ws.send(
+            JSON.stringify({
+                type: 'searchPlan',
+                data: parsedData.data,
+                messageId: messageId,
+            }),
+        );
+        searchPlan = parsedData.data;
     }
   });
   emitter.on('end', () => {
     ws.send(JSON.stringify({ type: 'messageEnd', messageId: messageId }));
-
+    const a = {
+        content: recievedMessage,
+        chatId: chatId,
+        messageId: messageId,
+        role: 'assistant',
+        metadata: JSON.stringify({
+            createdAt: new Date(),
+            ...(sources && sources.length > 0 && { sources }),
+            ...(searchPlan && { searchPlan }),
+        }),
+    };
     db.insert(messages)
       .values({
         content: recievedMessage,
@@ -80,6 +100,7 @@ const handleEmitterEvents = (
         metadata: JSON.stringify({
           createdAt: new Date(),
           ...(sources && sources.length > 0 && { sources }),
+          ...(searchPlan && { searchPlan }),
         }),
       })
       .execute();
@@ -101,6 +122,7 @@ export const handleMessage = async (
   ws: WebSocket,
   llm: BaseChatModel,
   embeddings: Embeddings,
+  session,
 ) => {
   try {
     const parsedWSMessage = JSON.parse(message) as WSMessage;
@@ -114,6 +136,13 @@ export const handleMessage = async (
       );
       return;
     }
+
+      if (parsedWSMessage.type === 'stop') {
+          if (session.emitter) {
+              session.emitter.emit('end');
+          }
+          return;
+      }
 
     const parsedMessage = parsedWSMessage.message;
 
@@ -144,14 +173,14 @@ export const handleMessage = async (
       const handler = searchHandlers[parsedWSMessage.focusMode];
 
       if (handler) {
-        const emitter = handler(
+          session.emitter = handler(
           parsedMessage.content,
           history,
           llm,
           embeddings,
         );
 
-        handleEmitterEvents(emitter, ws, id, parsedMessage.chatId);
+        handleEmitterEvents(session.emitter, ws, id, parsedMessage.chatId);
 
         const chat = await db.query.chats.findFirst({
           where: eq(chats.id, parsedMessage.chatId),

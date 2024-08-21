@@ -22,7 +22,14 @@ const handleStream = async (
   stream: AsyncGenerator<StreamEvent, any, unknown>,
   emitter: eventEmitter,
 ) => {
+  let cancel = false;
+  emitter.on('end', () => {
+    cancel = true;
+  });
   for await (const event of stream) {
+    if (cancel) {
+      return;
+    }
     if (
       event.event === 'on_chain_stream' &&
       event.name === 'FinalResponseGenerator'

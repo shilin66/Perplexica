@@ -34,21 +34,20 @@ If the follow-up question contains links and asks to answer from those links (or
    - Determine if the query requires special handling (e.g., links or summarization).
 
 2. **Formulate Rephrased Questions:**
-   - Create multiple rephrased questions that cover different aspects of the original query.
+   - Create multiple sub questions that cover different aspects of the original query. 
    - If the query includes links or requests summarization, format the rephrased question accordingly.
 
 3. **Advanced Search Logic:**
-   - Synthesize the rephrased questions into a comprehensive search query.
-   - Combine elements from each rephrased question to create a more complete and informative search query that captures different facets of the original question.
+   - Generate a search sub query for each sub question.
+   - Combine elements from each sub question to create a more complete and informative search query that captures different facets of the original question.
 
 4. **Finalize Rephrased Question:**
-   - Present the final rephrased search query as a single, comprehensive query, or use XML blocks if the query involves links or summarization.
+   - Present the final rephrased search query include a single, comprehensive query and multiple sub query, structure is {{"comprehensiveQuery": "a single, comprehensive query", "subQuerys": ["sub query1", "sub query2", "sub query3"]}}, 
+   - If the query involves links or summarization, use XML blocks.
 
 ### Examples:
-1. Follow-up question: What is the capital of France?
-Rephrased question: \`Capital of France\`
 
-2. Follow-up question: Can you tell me what is X from https://example.com?
+1. Follow-up question: Can you tell me what is X from https://example.com?
 Rephrased question: \`
 <question>
 Can you tell me what is X?
@@ -59,7 +58,7 @@ https://example.com
 </links>
 \`
 
-3. Follow-up question: Summarize the content from https://example.com
+2. Follow-up question: Summarize the content from https://example.com
 Rephrased question: \`
 <question>
 Summarize
@@ -70,9 +69,9 @@ https://example.com
 </links>
 \`
 
-4. Follow-up question: Find the best programming languages for AI development in 2024.
+3. Follow-up question: How was the opening ceremony of the Paris Olympics.
 Rephrased question: \`
-Best programming languages for AI development 2024 + Programming languages trends for AI 2024 + Top languages for AI coding 2024
+{{"comprehensiveQuery": "How was the opening ceremony of the Paris Olympics.", "subQuerys": ["Olympics 2024 Paris opening ceremony details","2024 Olympics Paris opening ceremony date and location"，"Paris Olympics opening ceremony performance schedule"]}}
 \`
 
 Conversation:
@@ -137,7 +136,7 @@ Start with a brief introduction that provides context or background to the query
 Summarize the main points and provide a closing statement.
 
 *Citations:* 
-- Ensure every part of the answer is cited using [1], [2], etc., corresponding to the search result numbers in the context. just show the numbers
+- Just display the number and corresponding original title. Must ensure every part of the answer is cited using [1], [2], etc., corresponding to the search result numbers in the context. 
 \`\`\`
 
 ### Handling Links and Summarization:
@@ -189,7 +188,29 @@ const handleStream = async (
   stream: AsyncGenerator<StreamEvent, any, unknown>,
   emitter: eventEmitter,
 ) => {
+  let cancel = false;
+  emitter.on('end', () => {
+    cancel = true;
+  });
   for await (const event of stream) {
+    if (cancel) {
+      return;
+    }
+    if (event.event === 'on_chain_end' && event.name === 'searchPlan') {
+      try {
+        const plan = JSON.parse(event.data.output.query);
+        if (plan.hasOwnProperty('comprehensiveQuery') && typeof plan === 'object'){
+          emitter.emit(
+              'data',
+              JSON.stringify({ type: 'searchPlan', data: plan }),
+          );
+        }
+
+      } catch (e) {
+        // 如果解析失败，返回 false
+        logger.error('searchPlan Err', e);
+      }
+    }
     if (
       event.event === 'on_chain_end' &&
       event.name === 'FinalSourceRetriever'
@@ -317,24 +338,48 @@ const createBasicWebSearchRetrieverChain = (llm: BaseChatModel) => {
 
         return { query: question, docs: docs };
       } else {
-        const res = await searchSearxng(input, {
-          language: 'en',
+        let queryS: string[] = [];
+        try {
+          const tmp = JSON.parse(input);
+          queryS = [tmp.comprehensiveQuery, ...tmp.subQuerys];
+        } catch (e) {
+          logger.error('make search plan Err', e);
+          queryS = [input];
+          input = `{"comprehensiveQuery": "${input}"}`
+        }
+
+        // 定义一个docs数组，并行调用seachSearxng，最终返回到docs数组
+        const allDocs = (await Promise.all(queryS.map(async (inputItem) => {
+          const res = await searchSearxng(inputItem, {
+            language: 'en',
+          });
+
+          return res.results.map(result =>
+              new Document({
+                pageContent: result.content,
+                metadata: {
+                  title: result.title,
+                  url: result.url,
+                  ...(result.img_src && { img_src: result.img_src }),
+                },
+              }),
+          );
+        }))).flat();
+        // 对docs中的url进行去重
+        const docs = [];
+        const seenUrls = new Set();
+
+        allDocs.forEach(doc => {
+          const url = doc.metadata.url;
+          if (!seenUrls.has(url)) {
+            seenUrls.add(url);
+            docs.push(doc);
+          }
         });
-
-        const documents = res.results.map(
-          (result) =>
-            new Document({
-              pageContent: result.content,
-              metadata: {
-                title: result.title,
-                url: result.url,
-                ...(result.img_src && { img_src: result.img_src }),
-              },
-            }),
-        );
-
-        return { query: input, docs: documents };
+        return { query: input, docs};
       }
+    }).withConfig({
+      runName: 'searchPlan',
     }),
   ]);
 };
@@ -347,7 +392,7 @@ const createBasicWebSearchAnsweringChain = (
 
   const processDocs = async (docs: Document[]) => {
     return docs
-      .map((_, index) => `${index + 1}. ${docs[index].pageContent}`)
+      .map((_, index) => `${index + 1}. title:${docs[index].metadata.title} \n pageContent: ${docs[index].pageContent}`)
       .join('\n');
   };
 

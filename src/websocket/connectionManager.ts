@@ -78,11 +78,11 @@ export const handleConnection = async (
       );
       ws.close();
     }
-
+    let session = {};
     ws.on(
       'message',
       async (message) =>
-        await handleMessage(message.toString(), ws, llm, embeddings),
+        await handleMessage(message.toString(), ws, llm, embeddings, session),
     );
 
     ws.on('close', () => logger.debug('Connection closed'));

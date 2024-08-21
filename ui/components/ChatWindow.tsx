@@ -19,6 +19,7 @@ export type Message = {
   role: 'user' | 'assistant';
   suggestions?: string[];
   sources?: Document[];
+  searchPlan?: {};
 };
 
 const useSocket = (
@@ -380,11 +381,23 @@ const ChatWindow = ({ id }: { id?: string }) => {
   }, [isMessagesLoaded, isWSReady]);
 
   const sendMessage = async (message: string) => {
+    if (message  === 'stop'  && loading) {
+      ws?.send(
+        JSON.stringify({
+          type: 'stop',
+          message: {
+            chatId: chatId!,
+          },
+        }),
+      );
+      return
+    }
     if (loading) return;
     setLoading(true);
     setMessageAppeared(false);
 
     let sources: Document[] | undefined = undefined;
+    let searchPlan: {} | undefined = undefined;
     let recievedMessage = '';
     let added = false;
 
@@ -425,6 +438,26 @@ const ChatWindow = ({ id }: { id?: string }) => {
         return;
       }
 
+      if (data.type === 'searchPlan') {
+        searchPlan = data.data;
+        if (!added) {
+          setMessages((prevMessages) => [
+            ...prevMessages,
+            {
+              content: '',
+              messageId: data.messageId,
+              chatId: chatId!,
+              role: 'assistant',
+              searchPlan,
+              sources: sources,
+              createdAt: new Date(),
+            },
+          ]);
+          added = true;
+        }
+        setMessageAppeared(true);
+      }
+
       if (data.type === 'sources') {
         sources = data.data;
         if (!added) {
@@ -435,17 +468,28 @@ const ChatWindow = ({ id }: { id?: string }) => {
               messageId: data.messageId,
               chatId: chatId!,
               role: 'assistant',
+              searchPlan,
               sources: sources,
               createdAt: new Date(),
             },
           ]);
           added = true;
+        } else {
+          setMessages((prev) =>
+              prev.map((message) => {
+                if (message.messageId === data.messageId) {
+                  return { ...message, sources };
+                }
+
+                return message;
+              }),
+          );
         }
         setMessageAppeared(true);
       }
 
       if (data.type === 'message') {
-        if (!added) {
+        if (!added ) {
           setMessages((prevMessages) => [
             ...prevMessages,
             {
@@ -453,6 +497,7 @@ const ChatWindow = ({ id }: { id?: string }) => {
               messageId: data.messageId,
               chatId: chatId!,
               role: 'assistant',
+              searchPlan,
               sources: sources,
               createdAt: new Date(),
             },
