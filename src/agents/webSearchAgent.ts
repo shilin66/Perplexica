@@ -199,13 +199,15 @@ const handleStream = async (
     if (event.event === 'on_chain_end' && event.name === 'searchPlan') {
       try {
         const plan = JSON.parse(event.data.output.query);
-        if (plan.hasOwnProperty('comprehensiveQuery') && typeof plan === 'object'){
+        if (
+          plan.hasOwnProperty('comprehensiveQuery') &&
+          typeof plan === 'object'
+        ) {
           emitter.emit(
-              'data',
-              JSON.stringify({ type: 'searchPlan', data: plan }),
+            'data',
+            JSON.stringify({ type: 'searchPlan', data: plan }),
           );
         }
-
       } catch (e) {
         // 如果解析失败，返回 false
         logger.error('searchPlan Err', e);
@@ -345,38 +347,43 @@ const createBasicWebSearchRetrieverChain = (llm: BaseChatModel) => {
         } catch (e) {
           logger.error('make search plan Err', e);
           queryS = [input];
-          input = `{"comprehensiveQuery": "${input}"}`
+          input = `{"comprehensiveQuery": "${input}"}`;
         }
 
         // 定义一个docs数组，并行调用seachSearxng，最终返回到docs数组
-        const allDocs = (await Promise.all(queryS.map(async (inputItem) => {
-          const res = await searchSearxng(inputItem, {
-            language: 'en',
-          });
+        const allDocs = (
+          await Promise.all(
+            queryS.map(async (inputItem) => {
+              const res = await searchSearxng(inputItem, {
+                language: 'en',
+              });
 
-          return res.results.map(result =>
-              new Document({
-                pageContent: result.content,
-                metadata: {
-                  title: result.title,
-                  url: result.url,
-                  ...(result.img_src && { img_src: result.img_src }),
-                },
-              }),
-          );
-        }))).flat();
+              return res.results.map(
+                (result) =>
+                  new Document({
+                    pageContent: result.content,
+                    metadata: {
+                      title: result.title,
+                      url: result.url,
+                      ...(result.img_src && { img_src: result.img_src }),
+                    },
+                  }),
+              );
+            }),
+          )
+        ).flat();
         // 对docs中的url进行去重
         const docs = [];
         const seenUrls = new Set();
 
-        allDocs.forEach(doc => {
+        allDocs.forEach((doc) => {
           const url = doc.metadata.url;
           if (!seenUrls.has(url)) {
             seenUrls.add(url);
             docs.push(doc);
           }
         });
-        return { query: input, docs};
+        return { query: input, docs };
       }
     }).withConfig({
       runName: 'searchPlan',
@@ -392,7 +399,10 @@ const createBasicWebSearchAnsweringChain = (
 
   const processDocs = async (docs: Document[]) => {
     return docs
-      .map((_, index) => `${index + 1}. title:${docs[index].metadata.title} \n pageContent: ${docs[index].pageContent}`)
+      .map(
+        (_, index) =>
+          `${index + 1}. title:${docs[index].metadata.title} \n pageContent: ${docs[index].pageContent}`,
+      )
       .join('\n');
   };
 

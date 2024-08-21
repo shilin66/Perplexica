@@ -25,7 +25,6 @@ export const loadOpenAIChatModels = async () => {
     logger.error(`Error loading OpenAI models: ${err}`);
     return {};
   }
-
 };
 
 export const loadOpenAIEmbeddingsModels = async () => {

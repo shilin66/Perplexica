@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import {ArrowUp, CircleStop} from 'lucide-react';
+import { ArrowUp, CircleStop } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import TextareaAutosize from 'react-textarea-autosize';
 import Attach from './MessageInputActions/Attach';
@@ -40,7 +40,7 @@ const MessageInput = ({
       sendMessage('stop');
       loading = false;
     }
-  }
+  };
 
   useEffect(() => {
     document.addEventListener('keydown', handleKeyDown);
@@ -60,7 +60,7 @@ const MessageInput = ({
         } else {
           sendMessage(message);
           setMessage('');
-        };
+        }
       }}
       onKeyDown={(e) => {
         if (e.key === 'Enter' && !e.shiftKey && !loading) {
@@ -96,11 +96,17 @@ const MessageInput = ({
           />
           <button
             disabled={message.trim().length === 0 && !loading}
-            className={`bg-${loading ? '' : '[#24A0ED]'} text-white disabled:text-black/50 dark:disabled:text-white/50 hover:bg-opacity-85 transition duration-100 disabled:bg-[#e0e0dc79] dark:disabled:bg-[#ececec21] rounded-full p-2`}          >
+            className={`bg-${loading ? '' : '[#24A0ED]'} text-white disabled:text-black/50 dark:disabled:text-white/50 hover:bg-opacity-85 transition duration-100 disabled:bg-[#e0e0dc79] dark:disabled:bg-[#ececec21] rounded-full p-2`}
+          >
             {loading ? (
-                <CircleStop size={30} color="red" className="text-black dark:text-white animate-spin" style={{ animationDuration: '1.5s' }}/>
+              <CircleStop
+                size={30}
+                color="red"
+                className="text-black dark:text-white animate-spin"
+                style={{ animationDuration: '1.5s' }}
+              />
             ) : (
-                <ArrowUp className="bg-background" size={17} />
+              <ArrowUp className="bg-background" size={17} />
             )}
           </button>
         </div>

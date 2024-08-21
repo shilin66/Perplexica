@@ -1,6 +1,6 @@
-import React, { useEffect, useState} from 'react';
-import Markdown from "markdown-to-jsx";
-import {cn} from "@/lib/utils";
+import React, { useEffect, useState } from 'react';
+import Markdown from 'markdown-to-jsx';
+import { cn } from '@/lib/utils';
 
 const MessageSearchPlan = ({ searchPlan }: { searchPlan: {} }) => {
   const [details, setDetails] = useState('');
@@ -30,18 +30,20 @@ const MessageSearchPlan = ({ searchPlan }: { searchPlan: {} }) => {
     } else {
       return key;
     }
-  }
+  };
   useEffect(() => {
     setDetails(convertToMarkdown(searchPlan));
   }, [searchPlan]);
 
   return (
-      <Markdown className={cn(
-          'prose dark:prose-invert prose-p:leading-relaxed prose-pre:p-0',
-          'max-w-none break-words text-black dark:text-white text-sm md:text-base font-medium',
-      )}>
-        {details}
-      </Markdown>
+    <Markdown
+      className={cn(
+        'prose dark:prose-invert prose-p:leading-relaxed prose-pre:p-0',
+        'max-w-none break-words text-black dark:text-white text-sm md:text-base font-medium',
+      )}
+    >
+      {details}
+    </Markdown>
   );
 };
 

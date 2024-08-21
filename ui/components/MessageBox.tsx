@@ -10,7 +10,8 @@ import {
   Volume2,
   StopCircle,
   Layers3,
-  Plus, NotepadText,
+  Plus,
+  NotepadText,
 } from 'lucide-react';
 import Markdown from 'markdown-to-jsx';
 import Copy from './MessageActions/Copy';
@@ -19,7 +20,7 @@ import MessageSources from './MessageSources';
 import SearchImages from './SearchImages';
 import SearchVideos from './SearchVideos';
 import { useSpeech } from 'react-text-to-speech';
-import MessageSearchPlan from "@/components/MessageSearchPlan";
+import MessageSearchPlan from '@/components/MessageSearchPlan';
 
 const MessageBox = ({
   message,
@@ -83,15 +84,18 @@ const MessageBox = ({
             className="flex flex-col space-y-6 w-full lg:w-9/12"
           >
             {message.searchPlan && (
-                <div className="flex flex-col space-y-2">
-                  <div className="flex flex-row items-center space-x-2">
-                    <NotepadText className="text-black dark:text-white" size={20} />
-                    <h3 className="text-black dark:text-white font-medium text-xl">
-                      Search Plan
-                    </h3>
-                  </div>
-                  <MessageSearchPlan searchPlan={message.searchPlan} />
+              <div className="flex flex-col space-y-2">
+                <div className="flex flex-row items-center space-x-2">
+                  <NotepadText
+                    className="text-black dark:text-white"
+                    size={20}
+                  />
+                  <h3 className="text-black dark:text-white font-medium text-xl">
+                    Search Plan
+                  </h3>
                 </div>
+                <MessageSearchPlan searchPlan={message.searchPlan} />
+              </div>
             )}
             {message.sources && message.sources.length > 0 && (
               <div className="flex flex-col space-y-2">

@@ -152,10 +152,7 @@ const SettingsDialog = ({
 
       localStorage.setItem('chatModelProvider', 'openai');
       localStorage.setItem('chatModel', selectedChatModel!);
-      localStorage.setItem(
-        'embeddingModelProvider',
-        'openai',
-      );
+      localStorage.setItem('embeddingModelProvider', 'openai');
       localStorage.setItem('embeddingModel', selectedEmbeddingModel!);
       localStorage.setItem('openAIApiKey', customOpenAIApiKey!);
       localStorage.setItem('openAIBaseURL', customOpenAIBaseURL!);
@@ -240,46 +237,42 @@ const SettingsDialog = ({
                     {/*)}*/}
                     {/*{selectedChatModelProvider &&*/}
                     {/*  selectedChatModelProvider != 'custom_openai' && (*/}
-                        <div className="flex flex-col space-y-1">
-                          <p className="text-black/70 dark:text-white/70 text-sm">
-                            Chat Model
-                          </p>
-                          <Select
-                            value={selectedChatModel ?? undefined}
-                            onChange={(e) =>
-                              setSelectedChatModel(e.target.value)
-                            }
-                            options={(() => {
-                              const chatModelProvider =
-                                config.chatModelProviders[
-                                  'openai'
-                                ];
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-black/70 dark:text-white/70 text-sm">
+                        Chat Model
+                      </p>
+                      <Select
+                        value={selectedChatModel ?? undefined}
+                        onChange={(e) => setSelectedChatModel(e.target.value)}
+                        options={(() => {
+                          const chatModelProvider =
+                            config.chatModelProviders['openai'];
 
-                              return chatModelProvider
-                                ? chatModelProvider.length > 0
-                                  ? chatModelProvider.map((model) => ({
-                                      value: model,
-                                      label: model,
-                                    }))
-                                  : [
-                                      {
-                                        value: '',
-                                        label: 'No models available',
-                                        disabled: true,
-                                      },
-                                    ]
-                                : [
-                                    {
-                                      value: '',
-                                      label:
-                                        'Invalid provider, please check backend logs',
-                                      disabled: true,
-                                    },
-                                  ];
-                            })()}
-                          />
-                        </div>
-                      {/*)}*/}
+                          return chatModelProvider
+                            ? chatModelProvider.length > 0
+                              ? chatModelProvider.map((model) => ({
+                                  value: model,
+                                  label: model,
+                                }))
+                              : [
+                                  {
+                                    value: '',
+                                    label: 'No models available',
+                                    disabled: true,
+                                  },
+                                ]
+                            : [
+                                {
+                                  value: '',
+                                  label:
+                                    'Invalid provider, please check backend logs',
+                                  disabled: true,
+                                },
+                              ];
+                        })()}
+                      />
+                    </div>
+                    {/*)}*/}
                     {/*{selectedChatModelProvider &&*/}
                     {/*  selectedChatModelProvider === 'custom_openai' && (*/}
                     {/*    <>*/}
@@ -296,34 +289,34 @@ const SettingsDialog = ({
                     {/*          }*/}
                     {/*        />*/}
                     {/*      </div>*/}
-                          {/*<div className="flex flex-col space-y-1">*/}
-                          {/*  <p className="text-black/70 dark:text-white/70 text-sm">*/}
-                          {/*    Custom OpenAI API Key*/}
-                          {/*  </p>*/}
-                          {/*  <Input*/}
-                          {/*    type="text"*/}
-                          {/*    placeholder="Custom OpenAI API Key"*/}
-                          {/*    defaultValue={customOpenAIApiKey!}*/}
-                          {/*    onChange={(e) =>*/}
-                          {/*      setCustomOpenAIApiKey(e.target.value)*/}
-                          {/*    }*/}
-                          {/*  />*/}
-                          {/*</div>*/}
-                          {/*<div className="flex flex-col space-y-1">*/}
-                          {/*  <p className="text-black/70 dark:text-white/70 text-sm">*/}
-                          {/*    Custom OpenAI Base URL*/}
-                          {/*  </p>*/}
-                          {/*  <Input*/}
-                          {/*    type="text"*/}
-                          {/*    placeholder="Custom OpenAI Base URL"*/}
-                          {/*    defaultValue={customOpenAIBaseURL!}*/}
-                          {/*    onChange={(e) =>*/}
-                          {/*      setCustomOpenAIBaseURL(e.target.value)*/}
-                          {/*    }*/}
-                          {/*  />*/}
-                          {/*</div>*/}
-                        {/*</>*/}
-                      {/*// )}*/}
+                    {/*<div className="flex flex-col space-y-1">*/}
+                    {/*  <p className="text-black/70 dark:text-white/70 text-sm">*/}
+                    {/*    Custom OpenAI API Key*/}
+                    {/*  </p>*/}
+                    {/*  <Input*/}
+                    {/*    type="text"*/}
+                    {/*    placeholder="Custom OpenAI API Key"*/}
+                    {/*    defaultValue={customOpenAIApiKey!}*/}
+                    {/*    onChange={(e) =>*/}
+                    {/*      setCustomOpenAIApiKey(e.target.value)*/}
+                    {/*    }*/}
+                    {/*  />*/}
+                    {/*</div>*/}
+                    {/*<div className="flex flex-col space-y-1">*/}
+                    {/*  <p className="text-black/70 dark:text-white/70 text-sm">*/}
+                    {/*    Custom OpenAI Base URL*/}
+                    {/*  </p>*/}
+                    {/*  <Input*/}
+                    {/*    type="text"*/}
+                    {/*    placeholder="Custom OpenAI Base URL"*/}
+                    {/*    defaultValue={customOpenAIBaseURL!}*/}
+                    {/*    onChange={(e) =>*/}
+                    {/*      setCustomOpenAIBaseURL(e.target.value)*/}
+                    {/*    }*/}
+                    {/*  />*/}
+                    {/*</div>*/}
+                    {/*</>*/}
+                    {/*// )}*/}
                     {/* Embedding models */}
                     {/*{config.embeddingModelProviders && (*/}
                     {/*  <div className="flex flex-col space-y-1">*/}
@@ -350,45 +343,43 @@ const SettingsDialog = ({
                     {/*  </div>*/}
                     {/*)}*/}
                     {/*{selectedEmbeddingModelProvider && (*/}
-                      <div className="flex flex-col space-y-1">
-                        <p className="text-black/70 dark:text-white/70 text-sm">
-                          Embedding Model
-                        </p>
-                        <Select
-                          value={selectedEmbeddingModel ?? undefined}
-                          onChange={(e) =>
-                            setSelectedEmbeddingModel(e.target.value)
-                          }
-                          options={(() => {
-                            const embeddingModelProvider =
-                              config.embeddingModelProviders[
-                                'openai'
-                              ];
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-black/70 dark:text-white/70 text-sm">
+                        Embedding Model
+                      </p>
+                      <Select
+                        value={selectedEmbeddingModel ?? undefined}
+                        onChange={(e) =>
+                          setSelectedEmbeddingModel(e.target.value)
+                        }
+                        options={(() => {
+                          const embeddingModelProvider =
+                            config.embeddingModelProviders['openai'];
 
-                            return embeddingModelProvider
-                              ? embeddingModelProvider.length > 0
-                                ? embeddingModelProvider.map((model) => ({
-                                    label: model,
-                                    value: model,
-                                  }))
-                                : [
-                                    {
-                                      label: 'No embedding models available',
-                                      value: '',
-                                      disabled: true,
-                                    },
-                                  ]
+                          return embeddingModelProvider
+                            ? embeddingModelProvider.length > 0
+                              ? embeddingModelProvider.map((model) => ({
+                                  label: model,
+                                  value: model,
+                                }))
                               : [
                                   {
-                                    label:
-                                      'Invalid provider, please check backend logs',
+                                    label: 'No embedding models available',
                                     value: '',
                                     disabled: true,
                                   },
-                                ];
-                          })()}
-                        />
-                      </div>
+                                ]
+                            : [
+                                {
+                                  label:
+                                    'Invalid provider, please check backend logs',
+                                  value: '',
+                                  disabled: true,
+                                },
+                              ];
+                        })()}
+                      />
+                    </div>
                     {/*)}*/}
                     {/*<div className="flex flex-col space-y-1">*/}
                     {/*  <p className="text-black/70 dark:text-white/70 text-sm">*/}

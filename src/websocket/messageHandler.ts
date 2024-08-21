@@ -45,7 +45,7 @@ const handleEmitterEvents = (
 ) => {
   let recievedMessage = '';
   let sources = [];
-  let searchPlan = {}
+  let searchPlan = {};
 
   emitter.on('data', (data) => {
     const parsedData = JSON.parse(data);
@@ -68,28 +68,28 @@ const handleEmitterEvents = (
       );
       sources = parsedData.data;
     } else if (parsedData.type === 'searchPlan') {
-        ws.send(
-            JSON.stringify({
-                type: 'searchPlan',
-                data: parsedData.data,
-                messageId: messageId,
-            }),
-        );
-        searchPlan = parsedData.data;
+      ws.send(
+        JSON.stringify({
+          type: 'searchPlan',
+          data: parsedData.data,
+          messageId: messageId,
+        }),
+      );
+      searchPlan = parsedData.data;
     }
   });
   emitter.on('end', () => {
     ws.send(JSON.stringify({ type: 'messageEnd', messageId: messageId }));
     const a = {
-        content: recievedMessage,
-        chatId: chatId,
-        messageId: messageId,
-        role: 'assistant',
-        metadata: JSON.stringify({
-            createdAt: new Date(),
-            ...(sources && sources.length > 0 && { sources }),
-            ...(searchPlan && { searchPlan }),
-        }),
+      content: recievedMessage,
+      chatId: chatId,
+      messageId: messageId,
+      role: 'assistant',
+      metadata: JSON.stringify({
+        createdAt: new Date(),
+        ...(sources && sources.length > 0 && { sources }),
+        ...(searchPlan && { searchPlan }),
+      }),
     };
     db.insert(messages)
       .values({
@@ -137,12 +137,12 @@ export const handleMessage = async (
       return;
     }
 
-      if (parsedWSMessage.type === 'stop') {
-          if (session.emitter) {
-              session.emitter.emit('end');
-          }
-          return;
+    if (parsedWSMessage.type === 'stop') {
+      if (session.emitter) {
+        session.emitter.emit('end');
       }
+      return;
+    }
 
     const parsedMessage = parsedWSMessage.message;
 
@@ -173,7 +173,7 @@ export const handleMessage = async (
       const handler = searchHandlers[parsedWSMessage.focusMode];
 
       if (handler) {
-          session.emitter = handler(
+        session.emitter = handler(
           parsedMessage.content,
           history,
           llm,

@@ -42,21 +42,21 @@ const useSocket = (
             if (!heartbeatInterval) {
               console.log('Starting heartbeat interval');
               ws.send(
+                JSON.stringify({
+                  type: 'heartbeat',
+                  message: {
+                    content: 'ping',
+                  },
+                }),
+              );
+              heartbeatInterval = setInterval(() => {
+                ws.send(
                   JSON.stringify({
                     type: 'heartbeat',
                     message: {
                       content: 'ping',
                     },
                   }),
-              );
-              heartbeatInterval = setInterval(() => {
-                ws.send(
-                    JSON.stringify({
-                      type: 'heartbeat',
-                      message: {
-                        content: 'ping',
-                      },
-                    }),
                 );
               }, 30000); // 每30秒发送一次心跳
             }
@@ -99,7 +99,9 @@ const useSocket = (
             chatModelProvider = 'openai';
 
             if (chatModelProvider === 'custom_openai') {
-              toast.error('Seems like you are using the custom OpenAI provider, please open the settings and configure the API key and base URL');
+              toast.error(
+                'Seems like you are using the custom OpenAI provider, please open the settings and configure the API key and base URL',
+              );
               setError(true);
               return;
             } else {
@@ -215,7 +217,7 @@ const useSocket = (
           clearTimeout(timeoutId);
           setIsWSReady(true);
           // 设置心跳检查定时器
-          heartbeatTimeout = setInterval( () => checkActivity(ws), 10000); // 每10秒检查一次
+          heartbeatTimeout = setInterval(() => checkActivity(ws), 10000); // 每10秒检查一次
         };
 
         ws.onerror = () => {
@@ -249,7 +251,7 @@ const useSocket = (
           if (data.type === 'error') {
             toast.error(data.data);
           }
-        })
+        });
 
         setWs(ws);
       };
@@ -381,7 +383,7 @@ const ChatWindow = ({ id }: { id?: string }) => {
   }, [isMessagesLoaded, isWSReady]);
 
   const sendMessage = async (message: string) => {
-    if (message  === 'stop'  && loading) {
+    if (message === 'stop' && loading) {
       ws?.send(
         JSON.stringify({
           type: 'stop',
@@ -390,7 +392,7 @@ const ChatWindow = ({ id }: { id?: string }) => {
           },
         }),
       );
-      return
+      return;
     }
     if (loading) return;
     setLoading(true);
@@ -476,20 +478,20 @@ const ChatWindow = ({ id }: { id?: string }) => {
           added = true;
         } else {
           setMessages((prev) =>
-              prev.map((message) => {
-                if (message.messageId === data.messageId) {
-                  return { ...message, sources };
-                }
+            prev.map((message) => {
+              if (message.messageId === data.messageId) {
+                return { ...message, sources };
+              }
 
-                return message;
-              }),
+              return message;
+            }),
           );
         }
         setMessageAppeared(true);
       }
 
       if (data.type === 'message') {
-        if (!added ) {
+        if (!added) {
           setMessages((prevMessages) => [
             ...prevMessages,
             {
