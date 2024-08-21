@@ -18,7 +18,7 @@ services:
     depends_on:
       - searxng
     ports:
-      - 3001:3001
+      - 3003:3001
     volumes:
       - backend-dbstore:/home/perplexica/data
     extra_hosts:
@@ -31,10 +31,13 @@ services:
     build:
       context: .
       dockerfile: app.dockerfile
+      args:
+        - NEXT_PUBLIC_API_URL=https://zenai.zenlayer.win:3003/api
+        - NEXT_PUBLIC_WS_URL=wss://zenai.zenlayer.win:3003
     depends_on:
       - perplexica-backend
     ports:
-      - 3000:3000
+      - 3004:3000
     environment:
       - NEXT_PUBLIC_API_URL=https://zenai.zenlayer.win:3003/api
       - NEXT_PUBLIC_WS_URL=wss://zenai.zenlayer.win:3003

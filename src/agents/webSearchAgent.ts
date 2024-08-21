@@ -26,53 +26,40 @@ import LineOutputParser from '../lib/outputParsers/lineOutputParser';
 const basicSearchRetrieverPrompt = `
 You will be given a conversation below and a follow-up question. Your task is to rephrase the follow-up question so it can be used as a standalone query for web searching. If it is a writing task or a simple greeting rather than a question, return \`not_needed\`.
 
-If the follow-up question contains links and asks to answer from those links (or even if they don't), return the links inside a 'links' XML block and the question inside a 'question' XML block. If there are no links, return the rephrased question without any XML block. If the user asks to summarize content from some links, return \`Summarize\` as the question inside the 'question' XML block and the links inside the 'links' XML block.
+If the follow-up question below the conversation contains links and asks to answer from those links (or even if they don't), return the links inside a 'links' XML block and the question inside a 'question' XML block. If there are no links, return the rephrased question without any XML block，and you cannot forge any links. 
 
 ### Self-Define Phase:
-1. **Understand the Query:**
-   - Identify key components of the query.
-   - Determine if the query requires special handling (e.g., links or summarization).
+1. **Understand the follow-up question:**
+   - Identify key components of the follow-up question.
+   - Determine if the follow-up question requires special handling (e.g., links or summarization).
 
 2. **Formulate Rephrased Questions:**
-   - Create multiple sub questions that cover different aspects of the original query. 
-   - If the query includes links or requests summarization, format the rephrased question accordingly.
+   - Create multiple sub questions that cover different aspects of the original question. 
+   - If the question includes links or requests summarization, format the rephrased question accordingly.
 
 3. **Advanced Search Logic:**
    - Generate a search sub query for each sub question.
    - Combine elements from each sub question to create a more complete and informative search query that captures different facets of the original question.
 
 4. **Finalize Rephrased Question:**
-   - Present the final rephrased search query include a single, comprehensive query and multiple sub query, structure is {{"comprehensiveQuery": "a single, comprehensive query", "subQuerys": ["sub query1", "sub query2", "sub query3"]}}, 
-   - If the query involves links or summarization, use XML blocks.
+   - If the follow-up question below the conversation does not involve any links, present the final rephrased search query include a single, comprehensive query and multiple sub query, cannot contain any XML block. Structure must be {{"comprehensiveQuery": "a single, comprehensive query", "subQuerys": ["sub query1", "sub query2", "sub query3"]}}, subQuerys can be empty
+   - If the follow-up question below the conversation involves links or summarization, use XML blocks.
 
 ### Examples:
 
-1. Follow-up question: Can you tell me what is X from https://example.com?
+1. Follow-up question: Can you tell me what is X from https://examplelinks.com?
 Rephrased question: \`
 <question>
 Can you tell me what is X?
 </question>
 
 <links>
-https://example.com
+https://examplelinks.com
 </links>
 \`
 
-2. Follow-up question: Summarize the content from https://example.com
-Rephrased question: \`
-<question>
-Summarize
-</question>
-
-<links>
-https://example.com
-</links>
-\`
-
-3. Follow-up question: How was the opening ceremony of the Paris Olympics.
-Rephrased question: \`
-{{"comprehensiveQuery": "How was the opening ceremony of the Paris Olympics.", "subQuerys": ["Olympics 2024 Paris opening ceremony details","2024 Olympics Paris opening ceremony date and location"，"Paris Olympics opening ceremony performance schedule"]}}
-\`
+2. Follow-up question: How was the opening ceremony of the Paris Olympics.
+Rephrased question: {{"comprehensiveQuery": "How was the opening ceremony of the Paris Olympics.", "subQuerys": ["Olympics 2024 Paris opening ceremony details","2024 Olympics Paris opening ceremony date and location"，"Paris Olympics opening ceremony performance schedule"]}}
 
 Conversation:
 {chat_history}
@@ -151,7 +138,7 @@ Summarize
 </question>
 
 <links>
-https://example.com
+https://examplelinks.com
 </links>
 
 <context>
@@ -251,6 +238,7 @@ const createBasicWebSearchRetrieverChain = (llm: BaseChatModel) => {
     llm,
     strParser,
     RunnableLambda.from(async (input: string) => {
+      logger.info('createBasicWebSearchRetrieverChain=>' + input);
       if (input === 'not_needed') {
         return { query: '', docs: [] };
       }
@@ -348,6 +336,7 @@ const createBasicWebSearchRetrieverChain = (llm: BaseChatModel) => {
           logger.error('make search plan Err', e);
           queryS = [input];
           input = `{"comprehensiveQuery": "${input}"}`;
+          logger.info('make search plan=>' + input);
         }
 
         // 定义一个docs数组，并行调用seachSearxng，最终返回到docs数组
