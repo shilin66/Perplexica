@@ -3,7 +3,7 @@ import { htmlToText } from 'html-to-text';
 import { RecursiveCharacterTextSplitter } from 'langchain/text_splitter';
 import { Document } from '@langchain/core/documents';
 import pdfParse from 'pdf-parse';
-import logger from "../utils/logger";
+import logger from '../utils/logger';
 
 export const getDocumentsFromLinks = async ({ links }: { links: string[] }) => {
   const splitter = new RecursiveCharacterTextSplitter();
@@ -18,14 +18,18 @@ export const getDocumentsFromLinks = async ({ links }: { links: string[] }) => {
           : `https://${link}`;
 
       let res;
-        try {
-            res = await axios.get(link, {
-                responseType: 'arraybuffer',
-            });
-        } catch (e) {
-            logger.error('read doc links error:', e);
-            return;
+      try {
+        res = await axios.get(link, {
+          responseType: 'arraybuffer',
+        });
+      } catch (e) {
+        if (e instanceof Error) {
+          logger.error(`read doc links error: ${e.message}`);
+        } else {
+          logger.error('read doc links error:', String(e));
         }
+        return;
+      }
 
       const isPdf = res.headers['content-type'] === 'application/pdf';
 

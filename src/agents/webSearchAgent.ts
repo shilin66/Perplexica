@@ -1,13 +1,13 @@
 import { BaseMessage } from '@langchain/core/messages';
 import {
-  PromptTemplate,
   ChatPromptTemplate,
   MessagesPlaceholder,
+  PromptTemplate,
 } from '@langchain/core/prompts';
 import {
-  RunnableSequence,
-  RunnableMap,
   RunnableLambda,
+  RunnableMap,
+  RunnableSequence,
 } from '@langchain/core/runnables';
 import { StringOutputParser } from '@langchain/core/output_parsers';
 import { Document } from '@langchain/core/documents';
@@ -17,38 +17,50 @@ import type { BaseChatModel } from '@langchain/core/language_models/chat_models'
 import type { Embeddings } from '@langchain/core/embeddings';
 import formatChatHistoryAsString from '../utils/formatHistory';
 import eventEmitter from 'events';
-import computeSimilarity from '../utils/computeSimilarity';
 import logger from '../utils/logger';
 import LineListOutputParser from '../lib/outputParsers/listLineOutputParser';
 import { getDocumentsFromLinks } from '../lib/linkDocument';
 import LineOutputParser from '../lib/outputParsers/lineOutputParser';
+import { rerankDocs } from '../lib/docProcess';
 
 const basicSearchRetrieverPrompt = `
-You will be given a conversation below and a follow-up question. Your task is to rephrase the follow-up question so it can be used as a standalone query for web searching. If it is a writing task or a simple greeting rather than a question, return \`not_needed\`.
+You are an AI question rephraser.  You will be given a conversation and a follow-up question,  you will have to rephrase the follow up question and can be used by another LLM to search the web for information to answer it.
+If it is a smple writing task or a greeting (unless the greeting contains a question after it) like Hi, Hello, How are you, etc. than a question then you need to return \`not_needed\` as the response (This is because the LLM won't need to search the web for finding information on this topic).
+If the user asks some question from some URL or wants you to summarize a PDF or a webpage (via URL) you need to return the links inside the \`links\` XML block and the question inside the \`question\` XML block.  
+If the user wants to you to summarize the webpage or the PDF you need to return \`summarize\` inside the \`question\` XML block in place of a question and the link to summarize in the \`links\` XML block.
 
-If the follow-up question below the conversation contains links and asks to answer from those links (or even if they don't), return the links inside a 'links' XML block and the question inside a 'question' XML block. If there are no links, return the rephrased question without any XML block，and you cannot forge any links. 
-
+For questions that do not use a \`links\` xml block, you need to rewrite the problem according to the rules that describe the self-define phase in the \`self-define\` xml block below.
+<self-define>
 ### Self-Define Phase:
 1. **Understand the follow-up question:**
    - Identify key components of the follow-up question.
-   - Determine if the follow-up question requires special handling (e.g., links or summarization).
 
 2. **Formulate Rephrased Questions:**
    - Create multiple sub questions that cover different aspects of the original question. 
-   - If the question includes links or requests summarization, format the rephrased question accordingly.
 
 3. **Advanced Search Logic:**
    - Generate a search sub query for each sub question.
-   - Combine elements from each sub question to create a more complete and informative search query that captures different facets of the original question.
+   - Combine elements from each sub question to create a more complete and informative comprehensive search query that captures different facets of the original question.
 
-4. **Finalize Rephrased Question:**
-   - If the follow-up question below the conversation does not involve any links, present the final rephrased search query include a single, comprehensive query and multiple sub query, cannot contain any XML block. Structure must be {{"comprehensiveQuery": "a single, comprehensive query", "subQuerys": ["sub query1", "sub query2", "sub query3"]}}, subQuerys can be empty
-   - If the follow-up question below the conversation involves links or summarization, use XML blocks.
+4. **Finalize Question:**
+   - Return the final question using a json Object of this format:
+      {{
+        "comprehensiveQuery": "a single, comprehensive query",
+        "subQueries": [
+          "sub query1",
+          "sub query2",
+          "sub query3"
+        ]
+      }}, you must place the json in \`question\` xml block.
+   - The Json result can not  include any xml block.   
+</self-define>
 
-### Examples:
+You must always return the rephrased question inside the \`question\` XML block, if there are no links in the follow-up question then don't insert a \`links\` XML block in your response.
 
+There are several examples attached for your reference inside the below \`examples\` XML block
+<examples>
 1. Follow-up question: Can you tell me what is X from https://examplelinks.com?
-Rephrased question: \`
+Rephrased question:
 <question>
 Can you tell me what is X?
 </question>
@@ -56,13 +68,45 @@ Can you tell me what is X?
 <links>
 https://examplelinks.com
 </links>
-\`
 
-2. Follow-up question: How was the opening ceremony of the Paris Olympics.
-Rephrased question: {{"comprehensiveQuery": "How was the opening ceremony of the Paris Olympics.", "subQuerys": ["Olympics 2024 Paris opening ceremony details","2024 Olympics Paris opening ceremony date and location"，"Paris Olympics opening ceremony performance schedule"]}}
+2. Hi, how are you?
+Rephrased question:
+<question>
+not_needed
+</question>
 
-Conversation:
+3. Follow-up question: How was the opening ceremony of the Paris Olympics.
+Rephrased question: 
+<question>
+{{
+  "comprehensiveQuery": "How was the opening ceremony of the Paris Olympics.",
+  "subQueries": [
+    "Olympics 2024 Paris opening ceremony details",
+    "2024 Olympics Paris opening ceremony date and location",
+    "Paris Olympics opening ceremony performance schedule"
+  ]
+}}
+</question>
+
+4. Follow-up question: Who is Musk.
+Rephrased question: 
+<question>
+{{
+  "comprehensiveQuery": "Who is Musk.",
+  "subQueries": [
+    "Musk's personal background",
+    "Musk's career",
+    "What is Elon Musk currently doing"
+  ]
+}}
+</question>
+
+</examples>
+
+Anything below is the part of the actual conversation and you need to use conversation and the follow-up question to rephrase the follow-up question based on the guidelines shared above.
+<conversation>
 {chat_history}
+</conversation>
 
 Follow-up question: {query}
 Rephrased question:
@@ -232,6 +276,11 @@ type BasicChainInput = {
   query: string;
 };
 
+const test = (a: any) => {
+  logger.info('test=>' + a.query);
+  return a;
+};
+
 const createBasicWebSearchRetrieverChain = (llm: BaseChatModel) => {
   return RunnableSequence.from([
     PromptTemplate.fromTemplate(basicSearchRetrieverPrompt),
@@ -239,9 +288,6 @@ const createBasicWebSearchRetrieverChain = (llm: BaseChatModel) => {
     strParser,
     RunnableLambda.from(async (input: string) => {
       logger.info('createBasicWebSearchRetrieverChain=>' + input);
-      if (input === 'not_needed') {
-        return { query: '', docs: [] };
-      }
 
       const linksOutputParser = new LineListOutputParser({
         key: 'links',
@@ -253,6 +299,10 @@ const createBasicWebSearchRetrieverChain = (llm: BaseChatModel) => {
 
       const links = await linksOutputParser.parse(input);
       let question = await questionOutputParser.parse(input);
+
+      if (question === 'not_needed') {
+        return { query: '', docs: [] };
+      }
 
       if (links.length > 0) {
         if (question.length === 0) {
@@ -326,12 +376,12 @@ const createBasicWebSearchRetrieverChain = (llm: BaseChatModel) => {
           }),
         );
 
-        return { query: question, docs: docs };
+        return { query: question, docs };
       } else {
         let queryS: string[] = [];
         try {
-          const tmp = JSON.parse(input);
-          queryS = [tmp.comprehensiveQuery, ...tmp.subQuerys];
+          const tmp = JSON.parse(question);
+          queryS = [tmp.comprehensiveQuery, ...tmp.subQueries];
         } catch (e) {
           logger.error('make search plan Err', e);
           queryS = [input];
@@ -372,7 +422,7 @@ const createBasicWebSearchRetrieverChain = (llm: BaseChatModel) => {
             docs.push(doc);
           }
         });
-        return { query: input, docs };
+        return { query: question, docs };
       }
     }).withConfig({
       runName: 'searchPlan',
@@ -395,46 +445,14 @@ const createBasicWebSearchAnsweringChain = (
       .join('\n');
   };
 
-  const rerankDocs = async ({
+  const rerank = async ({
     query,
     docs,
   }: {
     query: string;
     docs: Document[];
   }) => {
-    if (docs.length === 0) {
-      return docs;
-    }
-
-    if (query === 'Summarize') {
-      return docs;
-    }
-
-    const docsWithContent = docs.filter(
-      (doc) => doc.pageContent && doc.pageContent.length > 0,
-    );
-
-    const [docEmbeddings, queryEmbedding] = await Promise.all([
-      embeddings.embedDocuments(docsWithContent.map((doc) => doc.pageContent)),
-      embeddings.embedQuery(query),
-    ]);
-
-    const similarity = docEmbeddings.map((docEmbedding, i) => {
-      const sim = computeSimilarity(queryEmbedding, docEmbedding);
-
-      return {
-        index: i,
-        similarity: sim,
-      };
-    });
-
-    const sortedDocs = similarity
-      .filter((sim) => sim.similarity > 0.5)
-      .sort((a, b) => b.similarity - a.similarity)
-      .slice(0, 15)
-      .map((sim) => docsWithContent[sim.index]);
-
-    return sortedDocs;
+    return rerankDocs({ query, docs, embeddings, returnSize: 15, weight: 0.5 });
   };
 
   return RunnableSequence.from([
@@ -447,7 +465,7 @@ const createBasicWebSearchAnsweringChain = (
           chat_history: formatChatHistoryAsString(input.chat_history),
         }),
         basicWebSearchRetrieverChain
-          .pipe(rerankDocs)
+          .pipe(rerank)
           .withConfig({
             runName: 'FinalSourceRetriever',
           })

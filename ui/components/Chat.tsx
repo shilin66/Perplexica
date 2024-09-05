@@ -12,12 +12,14 @@ const Chat = ({
   sendMessage,
   messageAppeared,
   rewrite,
+  mindMapGenerated,
 }: {
   messages: Message[];
   sendMessage: (message: string) => void;
   loading: boolean;
   messageAppeared: boolean;
   rewrite: (messageId: string) => void;
+  mindMapGenerated: boolean;
 }) => {
   const [dividerWidth, setDividerWidth] = useState(0);
   const dividerRef = useRef<HTMLDivElement | null>(null);
@@ -64,6 +66,7 @@ const Chat = ({
               isLast={isLast}
               rewrite={rewrite}
               sendMessage={sendMessage}
+              mindMapGenerated={mindMapGenerated}
             />
             {!isLast && msg.role === 'assistant' && (
               <div className="h-px w-full bg-light-secondary dark:bg-dark-secondary" />

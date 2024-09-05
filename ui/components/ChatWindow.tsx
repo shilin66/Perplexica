@@ -20,6 +20,8 @@ export type Message = {
   suggestions?: string[];
   sources?: Document[];
   searchPlan?: {};
+  mindGraph?: string;
+  executePlan?: [];
 };
 
 const useSocket = (
@@ -347,6 +349,8 @@ const ChatWindow = ({ id }: { id?: string }) => {
 
   const [notFound, setNotFound] = useState(false);
 
+  const [mindMapGenerated, setMindMapGenerated] = useState(true);
+
   useEffect(() => {
     if (
       chatId &&
@@ -400,6 +404,8 @@ const ChatWindow = ({ id }: { id?: string }) => {
 
     let sources: Document[] | undefined = undefined;
     let searchPlan: {} | undefined = undefined;
+    let executePlan: [] | undefined = undefined;
+    let mindGraph = '';
     let recievedMessage = '';
     let added = false;
 
@@ -460,6 +466,93 @@ const ChatWindow = ({ id }: { id?: string }) => {
         setMessageAppeared(true);
       }
 
+      if (data.type === 'makePlan') {
+        executePlan = data.data;
+        if (!added) {
+          setMessages((prevMessages) => [
+            ...prevMessages,
+            {
+              content: '',
+              messageId: data.messageId,
+              chatId: chatId!,
+              role: 'assistant',
+              executePlan,
+              sources: sources,
+              createdAt: new Date(),
+            },
+          ]);
+          added = true;
+        }
+        setMessageAppeared(true);
+      }
+
+      if (data.type === 'doSearch') {
+        const searchResult = data.data;
+        console.log('[DEBUG] searchResult=>' + JSON.stringify(searchResult));
+        executePlan?.map((plan: any) => {
+          if (plan.planName === searchResult.planName) {
+            plan.searchResult = searchResult.searchResult;
+          }
+        });
+        setMessages((prev) =>
+          prev.map((message) => {
+            if (message.messageId === data.messageId && executePlan) {
+              message.executePlan = [...executePlan];
+              return message;
+            }
+            return message;
+          }),
+        );
+        setMessageAppeared(true);
+      }
+
+      if (data.type === 'planAnswer') {
+        const planAnswer = data.data;
+        console.log('[DEBUG] planAnswer=>' + JSON.stringify(planAnswer));
+        executePlan?.map((plan: any) => {
+          if (plan.planName === planAnswer.planName) {
+            if (planAnswer.status && planAnswer.status === 'finished') {
+              plan.status = 'finished';
+              return;
+            }
+            if (plan.answer === undefined) {
+              plan.answer = '';
+            }
+            plan.answer += planAnswer.answer;
+          }
+        });
+        setMessages((prev) =>
+          prev.map((message) => {
+            if (message.messageId === data.messageId && executePlan) {
+              message.executePlan = [...executePlan];
+              return message;
+            }
+            return message;
+          }),
+        );
+        setMessageAppeared(true);
+      }
+
+      if (data.type === 'generateMind') {
+        setMessages((prev) =>
+          prev.map((message) => {
+            if (message.messageId === data.messageId) {
+              return {
+                ...message,
+                mindGraph: (message.mindGraph || '') + data.data,
+              };
+            }
+            return message;
+          }),
+        );
+        setMindMapGenerated(false);
+        setMessageAppeared(true);
+      }
+
+      if (data.type === 'mindGraph') {
+        setMindMapGenerated(true);
+      }
+
       if (data.type === 'sources') {
         sources = data.data;
         if (!added) {
@@ -500,6 +593,8 @@ const ChatWindow = ({ id }: { id?: string }) => {
               chatId: chatId!,
               role: 'assistant',
               searchPlan,
+              executePlan,
+              mindGraph,
               sources: sources,
               createdAt: new Date(),
             },
@@ -603,6 +698,7 @@ const ChatWindow = ({ id }: { id?: string }) => {
               sendMessage={sendMessage}
               messageAppeared={messageAppeared}
               rewrite={rewrite}
+              mindMapGenerated={mindMapGenerated}
             />
           </>
         ) : (

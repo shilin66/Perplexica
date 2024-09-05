@@ -13,6 +13,7 @@ import db from '../db';
 import { chats, messages } from '../db/schema';
 import { eq } from 'drizzle-orm';
 import crypto from 'crypto';
+import handleMindSearch from '../agents/mindSearchAgent';
 
 type Message = {
   messageId: string;
@@ -35,6 +36,7 @@ const searchHandlers = {
   wolframAlphaSearch: handleWolframAlphaSearch,
   youtubeSearch: handleYoutubeSearch,
   redditSearch: handleRedditSearch,
+  mindSearch: handleMindSearch,
 };
 
 const handleEmitterEvents = (
@@ -44,8 +46,11 @@ const handleEmitterEvents = (
   chatId: string,
 ) => {
   let recievedMessage = '';
+  let mindMessage = '';
   let sources = [];
   let searchPlan = {};
+  let executePlan = {};
+  let mindGraph = {};
 
   emitter.on('data', (data) => {
     const parsedData = JSON.parse(data);
@@ -76,21 +81,61 @@ const handleEmitterEvents = (
         }),
       );
       searchPlan = parsedData.data;
+    } else if (parsedData.type === 'makePlan') {
+      ws.send(
+        JSON.stringify({
+          type: 'makePlan',
+          data: parsedData.data,
+          messageId: messageId,
+        }),
+      );
+    } else if (parsedData.type === 'executePlan') {
+      ws.send(
+        JSON.stringify({
+          type: 'executePlan',
+          data: parsedData.data,
+          messageId: messageId,
+        }),
+      );
+      executePlan = parsedData.data;
+    } else if (parsedData.type === 'planAnswer') {
+      ws.send(
+        JSON.stringify({
+          type: 'planAnswer',
+          data: parsedData.data,
+          messageId: messageId,
+        }),
+      );
+    } else if (parsedData.type === 'doSearch') {
+      ws.send(
+        JSON.stringify({
+          type: 'doSearch',
+          data: parsedData.data,
+          messageId: messageId,
+        }),
+      );
+    } else if (parsedData.type === 'generateMind') {
+      ws.send(
+        JSON.stringify({
+          type: 'generateMind',
+          data: parsedData.data,
+          messageId: messageId,
+        }),
+      );
+      mindMessage += parsedData.data;
+    } else if (parsedData.type === 'mindGraph') {
+      ws.send(
+        JSON.stringify({
+          type: 'mindGraph',
+          // data: mindMessage,
+          messageId: messageId,
+        }),
+      );
+      mindGraph = mindMessage;
     }
   });
   emitter.on('end', () => {
     ws.send(JSON.stringify({ type: 'messageEnd', messageId: messageId }));
-    const a = {
-      content: recievedMessage,
-      chatId: chatId,
-      messageId: messageId,
-      role: 'assistant',
-      metadata: JSON.stringify({
-        createdAt: new Date(),
-        ...(sources && sources.length > 0 && { sources }),
-        ...(searchPlan && { searchPlan }),
-      }),
-    };
     db.insert(messages)
       .values({
         content: recievedMessage,
@@ -101,6 +146,8 @@ const handleEmitterEvents = (
           createdAt: new Date(),
           ...(sources && sources.length > 0 && { sources }),
           ...(searchPlan && { searchPlan }),
+          ...(executePlan && { executePlan }),
+          ...(mindGraph && { mindGraph }),
         }),
       })
       .execute();

@@ -77,7 +77,7 @@ const MessageInput = ({
         boxShadow: '0 0 10px rgba(0,0,0,0.2)',
       }}
     >
-      {mode === 'single' && <Attach />}
+      {/*{mode === 'single' && <Attach />}*/}
       <TextareaAutosize
         ref={inputRef}
         value={message}
@@ -113,7 +113,7 @@ const MessageInput = ({
       )}
       {mode === 'multi' && (
         <div className="flex flex-row items-center justify-between w-full pt-2">
-          <Attach />
+          {/*<Attach />*/}
           <div className="flex flex-row items-center space-x-4">
             <CopilotToggle
               copilotEnabled={copilotEnabled}

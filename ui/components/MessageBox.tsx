@@ -7,11 +7,12 @@ import { cn } from '@/lib/utils';
 import {
   BookCopy,
   Disc3,
-  Volume2,
-  StopCircle,
   Layers3,
-  Plus,
+  Lightbulb,
   NotepadText,
+  Plus,
+  StopCircle,
+  Volume2,
 } from 'lucide-react';
 import Markdown from 'markdown-to-jsx';
 import Copy from './MessageActions/Copy';
@@ -21,6 +22,8 @@ import SearchImages from './SearchImages';
 import SearchVideos from './SearchVideos';
 import { useSpeech } from 'react-text-to-speech';
 import MessageSearchPlan from '@/components/MessageSearchPlan';
+import MessageMindMap from '@/components/MessageMindMap';
+import MessageTask from '@/components/MessageTask';
 
 const MessageBox = ({
   message,
@@ -31,6 +34,7 @@ const MessageBox = ({
   isLast,
   rewrite,
   sendMessage,
+  mindMapGenerated,
 }: {
   message: Message;
   messageIndex: number;
@@ -40,6 +44,7 @@ const MessageBox = ({
   isLast: boolean;
   rewrite: (messageId: string) => void;
   sendMessage: (message: string) => void;
+  mindMapGenerated: boolean;
 }) => {
   const [parsedMessage, setParsedMessage] = useState(message.content);
   const [speechMessage, setSpeechMessage] = useState(message.content);
@@ -83,7 +88,22 @@ const MessageBox = ({
             ref={dividerRef}
             className="flex flex-col space-y-6 w-full lg:w-9/12"
           >
-            {message.searchPlan && (
+            {message.searchPlan &&
+              Object.keys(message.searchPlan).length > 0 && (
+                <div className="flex flex-col space-y-2">
+                  <div className="flex flex-row items-center space-x-2">
+                    <NotepadText
+                      className="text-black dark:text-white"
+                      size={20}
+                    />
+                    <h3 className="text-black dark:text-white font-medium text-xl">
+                      Search Plan
+                    </h3>
+                  </div>
+                  <MessageSearchPlan searchPlan={message.searchPlan} />
+                </div>
+              )}
+            {message.executePlan && message.executePlan.length > 0 && (
               <div className="flex flex-col space-y-2">
                 <div className="flex flex-row items-center space-x-2">
                   <NotepadText
@@ -91,10 +111,10 @@ const MessageBox = ({
                     size={20}
                   />
                   <h3 className="text-black dark:text-white font-medium text-xl">
-                    Search Plan
+                    Execute Plan
                   </h3>
                 </div>
-                <MessageSearchPlan searchPlan={message.searchPlan} />
+                <MessageTask executePlan={message.executePlan} />
               </div>
             )}
             {message.sources && message.sources.length > 0 && (
@@ -106,6 +126,20 @@ const MessageBox = ({
                   </h3>
                 </div>
                 <MessageSources sources={message.sources} />
+              </div>
+            )}
+            {message.mindGraph && message.mindGraph.length > 0 && (
+              <div className="flex flex-col space-y-2">
+                <div className="flex flex-row items-center space-x-2">
+                  <Lightbulb className="text-black dark:text-white" size={25} />
+                  <h3 className="text-black dark:text-white font-medium text-xl">
+                    Mind Map
+                  </h3>
+                </div>
+                <MessageMindMap
+                  markdown={message.mindGraph}
+                  generated={mindMapGenerated}
+                />
               </div>
             )}
             <div className="flex flex-col space-y-2">
@@ -124,7 +158,7 @@ const MessageBox = ({
               <Markdown
                 className={cn(
                   'prose dark:prose-invert prose-p:leading-relaxed prose-pre:p-0',
-                  'max-w-none break-words text-black dark:text-white text-sm md:text-base font-medium',
+                  'max-w-none break-words text-black dark:text-white text-sm md:text-base font-mono',
                 )}
               >
                 {parsedMessage}

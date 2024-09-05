@@ -10,4 +10,68 @@
   .overflow-hidden-scrollable::-webkit-scrollbar {
     display: none;
   }
+
+  /* 自定义类 */
+  .indent-headings h1 {
+    padding-left: 10px; /* 你可以根据需要调整缩进 */
+  }
+
+  .indent-headings h2 {
+    padding-left: 20px;
+  }
+
+  .indent-headings h3 {
+    padding-left: 30px;
+  }
+
+  /* 继续对其他级别的标题进行缩进设置 */
+  .indent-headings h4 {
+    padding-left: 40px;
+  }
+
+  .indent-headings h5 {
+    padding-left: 50px;
+  }
+
+  .indent-headings h6 {
+    padding-left: 60px;
+  }
+  /* 列表缩进相对于标题 */
+  .indent-headings h1 + ul,
+  .indent-headings h1 + ol {
+    padding-left: 20px;
+  }
+
+  .indent-headings h2 + ul,
+  .indent-headings h2 + ol {
+    padding-left: 30px;
+  }
+
+  .indent-headings h3 + ul,
+  .indent-headings h3 + ol {
+    padding-left: 40px;
+  }
+
+  .indent-headings h4 + ul,
+  .indent-headings h4 + ol {
+    padding-left: 50px;
+  }
+
+  .indent-headings h5 + ul,
+  .indent-headings h5 + ol {
+    padding-left: 60px;
+  }
+
+  .indent-headings h6 + ul,
+  .indent-headings h6 + ol {
+    padding-left: 70px;
+  }
+
+  /* 处理嵌套列表的缩进 */
+  .indent-headings ul ul,
+  .indent-headings ul ol,
+  .indent-headings ol ul,
+  .indent-headings ol ol {
+    padding-left: 20px; /* 可根据需要调整嵌套列表的缩进 */
+  }
 }

@@ -1,5 +1,6 @@
 import {
   BadgePercent,
+  Brain,
   ChevronDown,
   Globe,
   Pencil,
@@ -17,6 +18,12 @@ const focusModes = [
     title: 'All',
     description: 'Searches across all of the internet',
     icon: <Globe size={20} />,
+  },
+  {
+    key: 'mindSearch',
+    title: 'Mind',
+    description: 'A powerful search',
+    icon: <Brain size={20} />,
   },
   {
     key: 'academicSearch',

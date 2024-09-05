@@ -25,7 +25,7 @@ const MessageSearchPlan = ({ searchPlan }: { searchPlan: {} }) => {
   const replaceKey = (key: string) => {
     if (key === 'comprehensiveQuery') {
       return 'Main Query';
-    } else if (key === 'subQuerys') {
+    } else if (key === 'subQueries') {
       return 'Sub Query';
     } else {
       return key;
