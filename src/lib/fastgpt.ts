@@ -15,7 +15,11 @@ export const getFastGptInitData = async () => {
     embeddingModels: [],
   };
   res.data.data.llmModels.map((llmModel: any) => {
-    models.llmModels.push(llmModel.model);
+    models.llmModels.push({
+      model: llmModel.model,
+      maxContext: llmModel.maxContext,
+      maxTemperature: llmModel.maxTemperature,
+    });
   });
   res.data.data.vectorModels.map((vectorModel: any) => {
     models.embeddingModels.push(vectorModel.model);

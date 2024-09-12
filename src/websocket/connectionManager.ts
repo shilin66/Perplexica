@@ -1,14 +1,12 @@
-import { WebSocket } from 'ws';
-import { handleMessage } from './messageHandler';
-import {
-  getAvailableEmbeddingModelProviders,
-  getAvailableChatModelProviders,
-} from '../lib/providers';
-import { BaseChatModel } from '@langchain/core/language_models/chat_models';
-import type { Embeddings } from '@langchain/core/embeddings';
-import type { IncomingMessage } from 'http';
+import {WebSocket} from 'ws';
+import {handleMessage} from './messageHandler';
+import {BaseChatModel} from '@langchain/core/language_models/chat_models';
+import type {Embeddings} from '@langchain/core/embeddings';
+import type {IncomingMessage} from 'http';
 import logger from '../utils/logger';
-import { ChatOpenAI } from '@langchain/openai';
+import {ChatOpenAI, OpenAIEmbeddings} from '@langchain/openai';
+import {getFastGptInitData} from "../lib/fastgpt";
+import {getOpenaiApiKey, getOpenaiBaseUrl} from "../config";
 
 export const handleConnection = async (
   ws: WebSocket,
@@ -17,56 +15,40 @@ export const handleConnection = async (
   try {
     const searchParams = new URL(request.url, `http://${request.headers.host}`)
       .searchParams;
-
-    const [chatModelProviders, embeddingModelProviders] = await Promise.all([
-      getAvailableChatModelProviders(),
-      getAvailableEmbeddingModelProviders(),
-    ]);
-
-    const chatModelProvider =
-      searchParams.get('chatModelProvider') ||
-      Object.keys(chatModelProviders)[0];
+    const {llmModels, embeddingModels} = await getFastGptInitData();
     const chatModel =
       searchParams.get('chatModel') ||
-      Object.keys(chatModelProviders[chatModelProvider])[0];
+      llmModels[0].model;
 
-    const embeddingModelProvider =
-      searchParams.get('embeddingModelProvider') ||
-      Object.keys(embeddingModelProviders)[0];
     const embeddingModel =
       searchParams.get('embeddingModel') ||
-      Object.keys(embeddingModelProviders[embeddingModelProvider])[0];
+      embeddingModels[0];
+
+    const temperature = Number(searchParams.get('temperature')) || 0.7;
+    const contextSize = Number(searchParams.get('contextSize')) || 8192;
 
     let llm: BaseChatModel | undefined;
     let embeddings: Embeddings | undefined;
 
-    if (
-      chatModelProviders[chatModelProvider] &&
-      chatModelProviders[chatModelProvider][chatModel] &&
-      chatModelProvider != 'custom_openai'
-    ) {
-      llm = chatModelProviders[chatModelProvider][chatModel] as unknown as
-        | BaseChatModel
-        | undefined;
-    } else if (chatModelProvider == 'custom_openai') {
-      llm = new ChatOpenAI({
-        modelName: chatModel,
-        openAIApiKey: searchParams.get('openAIApiKey'),
-        temperature: 0.7,
-        configuration: {
-          baseURL: searchParams.get('openAIBaseURL'),
-        },
-      }) as unknown as BaseChatModel;
-    }
+    llm = new ChatOpenAI({
+      modelName: chatModel,
+      openAIApiKey: getOpenaiApiKey(),
+      temperature: temperature,
+      maxTokens: contextSize,
+      configuration: {
+        baseURL: getOpenaiBaseUrl(),
+      },
+    }) as unknown as BaseChatModel;
 
-    if (
-      embeddingModelProviders[embeddingModelProvider] &&
-      embeddingModelProviders[embeddingModelProvider][embeddingModel]
-    ) {
-      embeddings = embeddingModelProviders[embeddingModelProvider][
-        embeddingModel
-      ] as Embeddings | undefined;
-    }
+    embeddings = new OpenAIEmbeddings(
+      {
+        openAIApiKey: getOpenaiApiKey(),
+        modelName: embeddingModel,
+        configuration: {
+          baseURL: getOpenaiBaseUrl(),
+        },
+      }
+    ) as unknown as Embeddings;
 
     if (!llm || !embeddings) {
       ws.send(

@@ -1,40 +1,25 @@
 import express from 'express';
-import {
-  getAvailableChatModelProviders,
-  getAvailableEmbeddingModelProviders,
-} from '../lib/providers';
-import {
-  getGroqApiKey,
-  getOllamaApiEndpoint,
-  getAnthropicApiKey,
-  getOpenaiApiKey,
-  updateConfig,
-} from '../config';
+import {getAnthropicApiKey, getGroqApiKey, getOllamaApiEndpoint, getOpenaiApiKey, updateConfig,} from '../config';
+import {getFastGptInitData} from "../lib/fastgpt";
 
 const router = express.Router();
 
 router.get('/', async (_, res) => {
   const config = {};
 
-  const [chatModelProviders, embeddingModelProviders] = await Promise.all([
-    getAvailableChatModelProviders(),
-    getAvailableEmbeddingModelProviders(),
-  ]);
-
   config['chatModelProviders'] = {};
   config['embeddingModelProviders'] = {};
 
-  for (const provider in chatModelProviders) {
-    config['chatModelProviders'][provider] = Object.keys(
-      chatModelProviders[provider],
-    );
-  }
+  const gptModels = await getFastGptInitData();
+  config['chatModelProviders']['openai'] = gptModels.llmModels.map(model => {
+    return {
+      modelName: model.model,
+      maxTemperature: model.maxTemperature,
+      maxContext: model.maxContext,
+    }
+  })
 
-  for (const provider in embeddingModelProviders) {
-    config['embeddingModelProviders'][provider] = Object.keys(
-      embeddingModelProviders[provider],
-    );
-  }
+  config['embeddingModelProviders']['openai'] = gptModels.embeddingModels;
 
   config['openaiApiKey'] = getOpenaiApiKey();
   config['ollamaApiUrl'] = getOllamaApiEndpoint();

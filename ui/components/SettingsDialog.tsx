@@ -3,11 +3,11 @@ import { Dialog, Transition } from '@headlessui/react';
 import { CloudUpload, RefreshCcw, RefreshCw } from 'lucide-react';
 import React, {
   Fragment,
+  type SelectHTMLAttributes,
   useEffect,
   useState,
-  type SelectHTMLAttributes,
 } from 'react';
-import ThemeSwitcher from './theme/Switcher';
+import { Slider } from 'antd';
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {}
 
@@ -49,7 +49,7 @@ export const Select = ({ className, options, ...restProps }: SelectProps) => {
 
 interface SettingsType {
   chatModelProviders: {
-    [key: string]: string[];
+    [key: string]: any[];
   };
   embeddingModelProviders: {
     [key: string]: string[];
@@ -81,6 +81,8 @@ const SettingsDialog = ({
   >(null);
   const [customOpenAIApiKey, setCustomOpenAIApiKey] = useState<string>('');
   const [customOpenAIBaseURL, setCustomOpenAIBaseURL] = useState<string>('');
+  const [temperature, setTemperature] = useState<number>(0.5);
+  const [contextSize, setContextSize] = useState<number>(8192);
   const [isLoading, setIsLoading] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
 
@@ -115,8 +117,14 @@ const SettingsDialog = ({
         const chatModel =
           localStorage.getItem('chatModel') ||
           (data.chatModelProviders &&
-            data.chatModelProviders[chatModelProvider]?.[0]) ||
+            data.chatModelProviders[chatModelProvider]?.[0].modelName) ||
           '';
+        const temperature = parseFloat(
+          localStorage.getItem('temperature') || '0.5',
+        );
+        const contextSize = parseInt(
+          localStorage.getItem('contextSize') || '8192',
+        );
         const embeddingModelProvider = 'openai';
         const embeddingModel =
           localStorage.getItem('embeddingModel') ||
@@ -124,16 +132,20 @@ const SettingsDialog = ({
             data.embeddingModelProviders[embeddingModelProvider]?.[0]) ||
           '';
 
+        console.log('chatModel', chatModel);
         setSelectedChatModelProvider(chatModelProvider);
         setSelectedChatModel(chatModel);
         setSelectedEmbeddingModelProvider(embeddingModelProvider);
         setSelectedEmbeddingModel(embeddingModel);
         setCustomOpenAIApiKey(localStorage.getItem('openAIApiKey') || '');
         setCustomOpenAIBaseURL(localStorage.getItem('openAIBaseURL') || '');
+        setTemperature(temperature);
+        setContextSize(contextSize);
         setIsLoading(false);
       };
 
       fetchConfig();
+      console.log(selectedChatModel);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
@@ -152,6 +164,8 @@ const SettingsDialog = ({
 
       localStorage.setItem('chatModelProvider', 'openai');
       localStorage.setItem('chatModel', selectedChatModel!);
+      localStorage.setItem('temperature', String(temperature!));
+      localStorage.setItem('contextSize', String(contextSize!));
       localStorage.setItem('embeddingModelProvider', 'openai');
       localStorage.setItem('embeddingModel', selectedEmbeddingModel!);
       localStorage.setItem('openAIApiKey', customOpenAIApiKey!);
@@ -203,42 +217,6 @@ const SettingsDialog = ({
                   <div className="flex flex-col space-y-4 mt-6">
                     <div className="flex flex-col space-y-1">
                       <p className="text-black/70 dark:text-white/70 text-sm">
-                        Theme
-                      </p>
-                      <ThemeSwitcher />
-                    </div>
-                    {/*{config.chatModelProviders && (*/}
-                    {/*  <div className="flex flex-col space-y-1">*/}
-                    {/*    <p className="text-black/70 dark:text-white/70 text-sm">*/}
-                    {/*      Chat model Provider*/}
-                    {/*    </p>*/}
-                    {/*    <Select*/}
-                    {/*      value={selectedChatModelProvider ?? undefined}*/}
-                    {/*      onChange={(e) => {*/}
-                    {/*        setSelectedChatModelProvider(e.target.value);*/}
-                    {/*        if (e.target.value === 'custom_openai') {*/}
-                    {/*          setSelectedChatModel('');*/}
-                    {/*        } else {*/}
-                    {/*          setSelectedChatModel(*/}
-                    {/*            config.chatModelProviders[e.target.value][0],*/}
-                    {/*          );*/}
-                    {/*        }*/}
-                    {/*      }}*/}
-                    {/*      options={Object.keys(config.chatModelProviders).map(*/}
-                    {/*        (provider) => ({*/}
-                    {/*          value: provider,*/}
-                    {/*          label:*/}
-                    {/*            provider.charAt(0).toUpperCase() +*/}
-                    {/*            provider.slice(1),*/}
-                    {/*        }),*/}
-                    {/*      )}*/}
-                    {/*    />*/}
-                    {/*  </div>*/}
-                    {/*)}*/}
-                    {/*{selectedChatModelProvider &&*/}
-                    {/*  selectedChatModelProvider != 'custom_openai' && (*/}
-                    <div className="flex flex-col space-y-1">
-                      <p className="text-black/70 dark:text-white/70 text-sm">
                         Chat Model
                       </p>
                       <Select
@@ -251,8 +229,8 @@ const SettingsDialog = ({
                           return chatModelProvider
                             ? chatModelProvider.length > 0
                               ? chatModelProvider.map((model) => ({
-                                  value: model,
-                                  label: model,
+                                  value: model.modelName,
+                                  label: model.modelName,
                                 }))
                               : [
                                   {
@@ -272,77 +250,38 @@ const SettingsDialog = ({
                         })()}
                       />
                     </div>
-                    {/*)}*/}
-                    {/*{selectedChatModelProvider &&*/}
-                    {/*  selectedChatModelProvider === 'custom_openai' && (*/}
-                    {/*    <>*/}
-                    {/*      <div className="flex flex-col space-y-1">*/}
-                    {/*        <p className="text-black/70 dark:text-white/70 text-sm">*/}
-                    {/*          Model name*/}
-                    {/*        </p>*/}
-                    {/*        <Input*/}
-                    {/*          type="text"*/}
-                    {/*          placeholder="Model name"*/}
-                    {/*          defaultValue={selectedChatModel!}*/}
-                    {/*          onChange={(e) =>*/}
-                    {/*            setSelectedChatModel(e.target.value)*/}
-                    {/*          }*/}
-                    {/*        />*/}
-                    {/*      </div>*/}
-                    {/*<div className="flex flex-col space-y-1">*/}
-                    {/*  <p className="text-black/70 dark:text-white/70 text-sm">*/}
-                    {/*    Custom OpenAI API Key*/}
-                    {/*  </p>*/}
-                    {/*  <Input*/}
-                    {/*    type="text"*/}
-                    {/*    placeholder="Custom OpenAI API Key"*/}
-                    {/*    defaultValue={customOpenAIApiKey!}*/}
-                    {/*    onChange={(e) =>*/}
-                    {/*      setCustomOpenAIApiKey(e.target.value)*/}
-                    {/*    }*/}
-                    {/*  />*/}
-                    {/*</div>*/}
-                    {/*<div className="flex flex-col space-y-1">*/}
-                    {/*  <p className="text-black/70 dark:text-white/70 text-sm">*/}
-                    {/*    Custom OpenAI Base URL*/}
-                    {/*  </p>*/}
-                    {/*  <Input*/}
-                    {/*    type="text"*/}
-                    {/*    placeholder="Custom OpenAI Base URL"*/}
-                    {/*    defaultValue={customOpenAIBaseURL!}*/}
-                    {/*    onChange={(e) =>*/}
-                    {/*      setCustomOpenAIBaseURL(e.target.value)*/}
-                    {/*    }*/}
-                    {/*  />*/}
-                    {/*</div>*/}
-                    {/*</>*/}
-                    {/*// )}*/}
-                    {/* Embedding models */}
-                    {/*{config.embeddingModelProviders && (*/}
-                    {/*  <div className="flex flex-col space-y-1">*/}
-                    {/*    <p className="text-black/70 dark:text-white/70 text-sm">*/}
-                    {/*      Embedding model Provider*/}
-                    {/*    </p>*/}
-                    {/*    <Select*/}
-                    {/*      value={selectedEmbeddingModelProvider ?? undefined}*/}
-                    {/*      onChange={(e) => {*/}
-                    {/*        setSelectedEmbeddingModelProvider(e.target.value);*/}
-                    {/*        setSelectedEmbeddingModel(*/}
-                    {/*          config.embeddingModelProviders[e.target.value][0],*/}
-                    {/*        );*/}
-                    {/*      }}*/}
-                    {/*      options={Object.keys(*/}
-                    {/*        config.embeddingModelProviders,*/}
-                    {/*      ).map((provider) => ({*/}
-                    {/*        label:*/}
-                    {/*          provider.charAt(0).toUpperCase() +*/}
-                    {/*          provider.slice(1),*/}
-                    {/*        value: provider,*/}
-                    {/*      }))}*/}
-                    {/*    />*/}
-                    {/*  </div>*/}
-                    {/*)}*/}
-                    {/*{selectedEmbeddingModelProvider && (*/}
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-black/70 dark:text-white/70 text-sm">
+                        Temperature
+                      </p>
+                      <Slider
+                        defaultValue={temperature}
+                        min={0}
+                        step={0.1}
+                        max={
+                          config.chatModelProviders?.['openai']?.find(
+                            (item) => item.modelName === selectedChatModel,
+                          )?.maxTemperature ?? 2
+                        }
+                        onChange={(value) => setTemperature(value)}
+                      />
+                    </div>
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-black/70 dark:text-white/70 text-sm">
+                        Max Context
+                      </p>
+                      <Slider
+                        defaultValue={contextSize}
+                        min={0}
+                        step={1}
+                        max={
+                          config.chatModelProviders?.['openai']?.find(
+                            (item) => item.modelName === selectedChatModel,
+                          )?.maxContext ?? 8192
+                        }
+                        onChange={(value) => setContextSize(value)}
+                      />
+                    </div>
                     <div className="flex flex-col space-y-1">
                       <p className="text-black/70 dark:text-white/70 text-sm">
                         Embedding Model
@@ -380,71 +319,6 @@ const SettingsDialog = ({
                         })()}
                       />
                     </div>
-                    {/*)}*/}
-                    {/*<div className="flex flex-col space-y-1">*/}
-                    {/*  <p className="text-black/70 dark:text-white/70 text-sm">*/}
-                    {/*    OpenAI API Key*/}
-                    {/*  </p>*/}
-                    {/*  <Input*/}
-                    {/*    type="text"*/}
-                    {/*    placeholder="OpenAI API Key"*/}
-                    {/*    defaultValue={config.openaiApiKey}*/}
-                    {/*    onChange={(e) =>*/}
-                    {/*      setConfig({*/}
-                    {/*        ...config,*/}
-                    {/*        openaiApiKey: e.target.value,*/}
-                    {/*      })*/}
-                    {/*    }*/}
-                    {/*  />*/}
-                    {/*</div>*/}
-                    {/*<div className="flex flex-col space-y-1">*/}
-                    {/*  <p className="text-black/70 dark:text-white/70 text-sm">*/}
-                    {/*    Ollama API URL*/}
-                    {/*  </p>*/}
-                    {/*  <Input*/}
-                    {/*    type="text"*/}
-                    {/*    placeholder="Ollama API URL"*/}
-                    {/*    defaultValue={config.ollamaApiUrl}*/}
-                    {/*    onChange={(e) =>*/}
-                    {/*      setConfig({*/}
-                    {/*        ...config,*/}
-                    {/*        ollamaApiUrl: e.target.value,*/}
-                    {/*      })*/}
-                    {/*    }*/}
-                    {/*  />*/}
-                    {/*</div>*/}
-                    {/*<div className="flex flex-col space-y-1">*/}
-                    {/*  <p className="text-black/70 dark:text-white/70 text-sm">*/}
-                    {/*    GROQ API Key*/}
-                    {/*  </p>*/}
-                    {/*  <Input*/}
-                    {/*    type="text"*/}
-                    {/*    placeholder="GROQ API Key"*/}
-                    {/*    defaultValue={config.groqApiKey}*/}
-                    {/*    onChange={(e) =>*/}
-                    {/*      setConfig({*/}
-                    {/*        ...config,*/}
-                    {/*        groqApiKey: e.target.value,*/}
-                    {/*      })*/}
-                    {/*    }*/}
-                    {/*  />*/}
-                    {/*</div>*/}
-                    {/*<div className="flex flex-col space-y-1">*/}
-                    {/*  <p className="text-black/70 dark:text-white/70 text-sm">*/}
-                    {/*    Anthropic API Key*/}
-                    {/*  </p>*/}
-                    {/*  <Input*/}
-                    {/*    type="text"*/}
-                    {/*    placeholder="Anthropic API key"*/}
-                    {/*    defaultValue={config.anthropicApiKey}*/}
-                    {/*    onChange={(e) =>*/}
-                    {/*      setConfig({*/}
-                    {/*        ...config,*/}
-                    {/*        anthropicApiKey: e.target.value,*/}
-                    {/*      })*/}
-                    {/*    }*/}
-                    {/*  />*/}
-                    {/*</div>*/}
                   </div>
                 )}
                 {isLoading && (

@@ -10,10 +10,10 @@ export const loadOpenAIChatModels = async () => {
     const gptModels = await getFastGptInitData();
     const chatModels = {};
     gptModels.llmModels.forEach((llmModel) => {
-      chatModels[llmModel] = new ChatOpenAI(
+      chatModels[llmModel.model] = new ChatOpenAI(
         {
           openAIApiKey,
-          modelName: llmModel,
+          modelName: llmModel.model,
           temperature: 0.7,
         },
         { baseURL: getOpenaiBaseUrl() },

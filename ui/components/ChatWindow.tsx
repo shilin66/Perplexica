@@ -74,6 +74,8 @@ const useSocket = (
       };
       const connectWs = async () => {
         let chatModel = localStorage.getItem('chatModel');
+        let temperature = localStorage.getItem('temperature');
+        let contextSize = localStorage.getItem('contextSize');
         let chatModelProvider = localStorage.getItem('chatModelProvider');
         let embeddingModel = localStorage.getItem('embeddingModel');
         let embeddingModelProvider = localStorage.getItem(
@@ -93,7 +95,9 @@ const useSocket = (
           !chatModel ||
           !chatModelProvider ||
           !embeddingModel ||
-          !embeddingModelProvider
+          !embeddingModelProvider ||
+          !temperature ||
+          !contextSize
         ) {
           if (!chatModel || !chatModelProvider) {
             const chatModelProviders = providers.chatModelProviders;
@@ -129,6 +133,15 @@ const useSocket = (
             embeddingModel = Object.keys(
               embeddingModelProviders[embeddingModelProvider],
             )[0];
+          }
+          if (!temperature) {
+            temperature = '0.7';
+            localStorage.setItem('temperature', temperature);
+          }
+
+          if (!contextSize) {
+            contextSize = '8192';
+            localStorage.setItem('contextSize', contextSize);
           }
 
           localStorage.setItem('chatModel', chatModel!);
@@ -186,6 +199,8 @@ const useSocket = (
 
         searchParams.append('chatModel', chatModel!);
         searchParams.append('chatModelProvider', chatModelProvider);
+        searchParams.append('temperature', temperature);
+        searchParams.append('contextSize', contextSize);
 
         if (chatModelProvider === 'custom_openai') {
           searchParams.append(
