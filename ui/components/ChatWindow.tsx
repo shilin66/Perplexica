@@ -73,6 +73,7 @@ const useSocket = (
         }
       };
       const connectWs = async () => {
+        console.log('fast token', localStorage.getItem('token'));
         let chatModel = localStorage.getItem('chatModel');
         let temperature = localStorage.getItem('temperature');
         let contextSize = localStorage.getItem('contextSize');
