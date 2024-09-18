@@ -25,12 +25,13 @@ const DeleteChat = ({
           method: 'DELETE',
           headers: {
             'Content-Type': 'application/json',
+            token: localStorage.getItem('token') || '',
           },
         },
       );
 
       if (res.status != 200) {
-        throw new Error('Failed to delete chat');
+        toast.error('Failed delete chat');
       }
 
       const newChats = chats.filter((chat) => chat.id !== chatId);

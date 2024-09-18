@@ -302,11 +302,12 @@ const loadMessages = async (
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
+        token: localStorage.getItem('token') || '',
       },
     },
   );
 
-  if (res.status === 404) {
+  if (res.status !== 200) {
     setNotFound(true);
     setIsMessagesLoaded(true);
     return;
@@ -385,7 +386,7 @@ const ChatWindow = ({ id }: { id?: string }) => {
     } else if (!chatId) {
       setNewChatCreated(true);
       setIsMessagesLoaded(true);
-      setChatId(crypto.randomBytes(20).toString('hex'));
+      setChatId(crypto.randomBytes(12).toString('hex'));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

@@ -1,6 +1,12 @@
 import express from 'express';
-import {getAnthropicApiKey, getGroqApiKey, getOllamaApiEndpoint, getOpenaiApiKey, updateConfig,} from '../config';
-import {getFastGptInitData} from "../lib/fastgpt";
+import {
+  getAnthropicApiKey,
+  getGroqApiKey,
+  getOllamaApiEndpoint,
+  getOpenaiApiKey,
+  updateConfig,
+} from '../config';
+import { getFastGptInitData } from '../lib/fastgpt';
 
 const router = express.Router();
 
@@ -11,13 +17,13 @@ router.get('/', async (_, res) => {
   config['embeddingModelProviders'] = {};
 
   const gptModels = await getFastGptInitData();
-  config['chatModelProviders']['openai'] = gptModels.llmModels.map(model => {
+  config['chatModelProviders']['openai'] = gptModels.llmModels.map((model) => {
     return {
       modelName: model.model,
       maxTemperature: model.maxTemperature,
       maxContext: model.maxContext,
-    }
-  })
+    };
+  });
 
   config['embeddingModelProviders']['openai'] = gptModels.embeddingModels;
 

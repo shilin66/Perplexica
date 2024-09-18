@@ -1,5 +1,5 @@
 import { EventEmitter, WebSocket } from 'ws';
-import { BaseMessage, AIMessage, HumanMessage } from '@langchain/core/messages';
+import { AIMessage, BaseMessage, HumanMessage } from '@langchain/core/messages';
 import handleWebSearch from '../agents/webSearchAgent';
 import handleAcademicSearch from '../agents/academicSearchAgent';
 import handleWritingAssistant from '../agents/writingAssistant';
@@ -9,11 +9,10 @@ import handleRedditSearch from '../agents/redditSearchAgent';
 import type { BaseChatModel } from '@langchain/core/language_models/chat_models';
 import type { Embeddings } from '@langchain/core/embeddings';
 import logger from '../utils/logger';
-import db from '../db';
-import { chats, messages } from '../db/schema';
-import { eq } from 'drizzle-orm';
 import crypto from 'crypto';
 import handleMindSearch from '../agents/mindSearchAgent';
+import { MongoMessages } from '../db/mongodb/Messages';
+import { MongoChats } from '../db/mongodb/ChatsSchema';
 
 type Message = {
   messageId: string;
@@ -136,21 +135,34 @@ const handleEmitterEvents = (
   });
   emitter.on('end', () => {
     ws.send(JSON.stringify({ type: 'messageEnd', messageId: messageId }));
-    db.insert(messages)
-      .values({
-        content: recievedMessage,
-        chatId: chatId,
-        messageId: messageId,
-        role: 'assistant',
-        metadata: JSON.stringify({
-          createdAt: new Date(),
-          ...(sources && sources.length > 0 && { sources }),
-          ...(searchPlan && { searchPlan }),
-          ...(executePlan && { executePlan }),
-          ...(mindGraph && { mindGraph }),
-        }),
-      })
-      .execute();
+    MongoMessages.create({
+      content: recievedMessage,
+      chatId: chatId,
+      messageId: messageId,
+      role: 'assistant',
+      metadata: JSON.stringify({
+        createdAt: new Date(),
+        ...(sources && sources.length > 0 && { sources }),
+        ...(searchPlan && { searchPlan }),
+        ...(executePlan && { executePlan }),
+        ...(mindGraph && { mindGraph }),
+      }),
+    });
+    // db.insert(messages)
+    //   .values({
+    //     content: recievedMessage,
+    //     chatId: chatId,
+    //     messageId: messageId,
+    //     role: 'assistant',
+    //     metadata: JSON.stringify({
+    //       createdAt: new Date(),
+    //       ...(sources && sources.length > 0 && { sources }),
+    //       ...(searchPlan && { searchPlan }),
+    //       ...(executePlan && { executePlan }),
+    //       ...(mindGraph && { mindGraph }),
+    //     }),
+    //   })
+    //   .execute();
   });
   emitter.on('error', (data) => {
     const parsedData = JSON.parse(data);
@@ -229,34 +241,50 @@ export const handleMessage = async (
 
         handleEmitterEvents(session.emitter, ws, id, parsedMessage.chatId);
 
-        const chat = await db.query.chats.findFirst({
-          where: eq(chats.id, parsedMessage.chatId),
-        });
+        const chat = await MongoChats.findById(parsedMessage.chatId).lean();
+
+        // const chat = await db.query.chats.findFirst({
+        //   where: eq(chats.id, parsedMessage.chatId),
+        // });
 
         if (!chat) {
-          await db
-            .insert(chats)
-            .values({
-              id: parsedMessage.chatId,
-              title: parsedMessage.content,
-              createdAt: new Date().toString(),
-              focusMode: parsedWSMessage.focusMode,
-            })
-            .execute();
+          await MongoChats.create({
+            _id: String(parsedMessage.chatId),
+            title: parsedMessage.content,
+            focusMode: parsedWSMessage.focusMode,
+            userId: session.jwtToken.userId,
+          });
+          // await db
+          //   .insert(chats)
+          //   .values({
+          //     id: parsedMessage.chatId,
+          //     title: parsedMessage.content,
+          //     createdAt: new Date().toString(),
+          //     focusMode: parsedWSMessage.focusMode,
+          //   })
+          //   .execute();
         }
-
-        await db
-          .insert(messages)
-          .values({
-            content: parsedMessage.content,
-            chatId: parsedMessage.chatId,
-            messageId: id,
-            role: 'user',
-            metadata: JSON.stringify({
-              createdAt: new Date(),
-            }),
-          })
-          .execute();
+        await MongoMessages.create({
+          content: parsedMessage.content,
+          chatId: parsedMessage.chatId,
+          messageId: id,
+          role: 'user',
+          metadata: JSON.stringify({
+            createdAt: new Date(),
+          }),
+        });
+        // await db
+        //   .insert(messages)
+        //   .values({
+        //     content: parsedMessage.content,
+        //     chatId: parsedMessage.chatId,
+        //     messageId: id,
+        //     role: 'user',
+        //     metadata: JSON.stringify({
+        //       createdAt: new Date(),
+        //     }),
+        //   })
+        //   .execute();
       } else {
         ws.send(
           JSON.stringify({

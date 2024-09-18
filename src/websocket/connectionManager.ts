@@ -1,28 +1,34 @@
-import {WebSocket} from 'ws';
-import {handleMessage} from './messageHandler';
-import {BaseChatModel} from '@langchain/core/language_models/chat_models';
-import type {Embeddings} from '@langchain/core/embeddings';
-import type {IncomingMessage} from 'http';
+import { WebSocket } from 'ws';
+import { handleMessage } from './messageHandler';
+import { BaseChatModel } from '@langchain/core/language_models/chat_models';
+import type { Embeddings } from '@langchain/core/embeddings';
+import type { IncomingMessage } from 'http';
 import logger from '../utils/logger';
-import {ChatOpenAI, OpenAIEmbeddings} from '@langchain/openai';
-import {getFastGptInitData} from "../lib/fastgpt";
-import {getOpenaiApiKey, getOpenaiBaseUrl} from "../config";
+import { ChatOpenAI, OpenAIEmbeddings } from '@langchain/openai';
+import { getFastGptInitData } from '../lib/fastgpt';
+import { connectionMongo, getOpenaiApiKey, getOpenaiBaseUrl } from '../config';
+import Cookie from 'cookie';
+import { verifyToken } from '../utils/token';
+import { connectMongo } from '../db/mongodb/init';
 
 export const handleConnection = async (
   ws: WebSocket,
   request: IncomingMessage,
 ) => {
   try {
+    await connectMongo();
     const searchParams = new URL(request.url, `http://${request.headers.host}`)
       .searchParams;
-    const {llmModels, embeddingModels} = await getFastGptInitData();
-    const chatModel =
-      searchParams.get('chatModel') ||
-      llmModels[0].model;
+
+    const { cookie } = request.headers;
+    const cookies = Cookie.parse(cookie || '');
+    const cookieToken = cookies['fastgpt_token'];
+    const jwtToken = await verifyToken(cookieToken);
+    const { llmModels, embeddingModels } = await getFastGptInitData();
+    const chatModel = searchParams.get('chatModel') || llmModels[0].model;
 
     const embeddingModel =
-      searchParams.get('embeddingModel') ||
-      embeddingModels[0];
+      searchParams.get('embeddingModel') || embeddingModels[0];
 
     const temperature = Number(searchParams.get('temperature')) || 0.7;
     const contextSize = Number(searchParams.get('contextSize')) || 8192;
@@ -40,15 +46,13 @@ export const handleConnection = async (
       },
     }) as unknown as BaseChatModel;
 
-    embeddings = new OpenAIEmbeddings(
-      {
-        openAIApiKey: getOpenaiApiKey(),
-        modelName: embeddingModel,
-        configuration: {
-          baseURL: getOpenaiBaseUrl(),
-        },
-      }
-    ) as unknown as Embeddings;
+    embeddings = new OpenAIEmbeddings({
+      openAIApiKey: getOpenaiApiKey(),
+      modelName: embeddingModel,
+      configuration: {
+        baseURL: getOpenaiBaseUrl(),
+      },
+    }) as unknown as Embeddings;
 
     if (!llm || !embeddings) {
       ws.send(
@@ -60,7 +64,8 @@ export const handleConnection = async (
       );
       ws.close();
     }
-    let session = {};
+    let session: Record<string, any> = {};
+    session.jwtToken = jwtToken;
     ws.on(
       'message',
       async (message) =>

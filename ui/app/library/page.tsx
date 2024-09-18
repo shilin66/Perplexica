@@ -5,6 +5,7 @@ import { formatTimeDifference } from '@/lib/utils';
 import { BookOpenText, ClockIcon, Delete, ScanEye } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
 export interface Chat {
   id: string;
@@ -25,12 +26,20 @@ const Page = () => {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
+          token: localStorage.getItem('token') || '',
         },
       });
 
-      const data = await res.json();
+      const data = await res.json(); // 始终解析响应数据
 
-      setChats(data.chats);
+      if (res.status === 200) {
+        setChats(data.chats || []);
+      } else {
+        setChats([]);
+        setLoading(false);
+        console.log(data); // 打印解析后的数据
+        toast.error('Failed query chat');
+      }
       setLoading(false);
     };
 

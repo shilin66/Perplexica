@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import toml from '@iarna/toml';
+import mongoose from 'mongoose';
 
 const configFileName = 'config.toml';
 
@@ -8,6 +9,9 @@ interface Config {
   GENERAL: {
     PORT: number;
     SIMILARITY_MEASURE: string;
+    MONGODB_URI: string;
+    MONGODB_MAX_LINK: string;
+    JWT_SIGN_KEY: string;
   };
   API_KEYS: {
     OPENAI: string;
@@ -48,10 +52,30 @@ export const getOllamaApiEndpoint = () => loadConfig().API_ENDPOINTS.OLLAMA;
 
 export const getFastGptEndpoint = () => loadConfig().API_ENDPOINTS.FASTGPT_URL;
 
+export const getJwtSignKey = () => loadConfig().GENERAL.JWT_SIGN_KEY;
 export const getOpenaiBaseUrl = () => {
   const openaiBaseUrl = loadConfig().API_ENDPOINTS.OPENAI_BASE_URL;
   // 如果没有配置，则使用默认值
   return openaiBaseUrl || 'https://api.openai.com/v1';
+};
+
+export const getMongoDbUrl = () => {
+  const mongoDbUrl = loadConfig().GENERAL.MONGODB_URI;
+  // 如果没有配置，则使用默认值
+  return mongoDbUrl || 'mongodb://localhost:27017/perplexica';
+};
+
+export const getMongoDbMaxLink = () => {
+  const mongoDbMaxLink = loadConfig().GENERAL.MONGODB_MAX_LINK;
+  // 如果没有配置，则使用默认值
+  return mongoDbMaxLink || '30';
+};
+
+export const connectionMongo = () => {
+  if (!global.mongodb) {
+    global.mongodb = mongoose;
+  }
+  return global.mongodb;
 };
 
 export const updateConfig = (config: RecursivePartial<Config>) => {
