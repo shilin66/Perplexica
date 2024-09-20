@@ -268,7 +268,7 @@ const SettingsDialog = ({
                     </div>
                     <div className="flex flex-col space-y-1">
                       <p className="text-black/70 dark:text-white/70 text-sm">
-                        Max Context
+                        Context Size
                       </p>
                       <Slider
                         defaultValue={contextSize}

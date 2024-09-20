@@ -24,7 +24,7 @@ import LineOutputParser from '../lib/outputParsers/lineOutputParser';
 import { rerankDocs } from '../lib/docProcess';
 
 const basicSearchRetrieverPrompt = `
-You are an AI question rephraser.  You will be given a conversation and a follow-up question,  you will have to rephrase the follow up question and can be used by another LLM to search the web for information to answer it.
+You are an AI question rephraser, and you can not use any outside tools. You will be given a conversation and a follow-up question,  you will have to rephrase the follow up question and can be used by another LLM to search the web for information to answer it.
 If it is a smple writing task or a greeting (unless the greeting contains a question after it) like Hi, Hello, How are you, etc. than a question then you need to return \`not_needed\` as the response (This is because the LLM won't need to search the web for finding information on this topic).
 If the user asks some question from some URL or wants you to summarize a PDF or a webpage (via URL) you need to return the links inside the \`links\` XML block and the question inside the \`question\` XML block.  
 If the user wants to you to summarize the webpage or the PDF you need to return \`summarize\` inside the \`question\` XML block in place of a question and the link to summarize in the \`links\` XML block.

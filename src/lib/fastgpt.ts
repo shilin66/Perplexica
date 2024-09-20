@@ -15,14 +15,18 @@ export const getFastGptInitData = async () => {
     embeddingModels: [],
   };
   res.data.data.llmModels.map((llmModel: any) => {
-    models.llmModels.push({
-      model: llmModel.model,
-      maxContext: llmModel.maxContext,
-      maxTemperature: llmModel.maxTemperature,
-    });
+    if (llmModel.aiSearch) {
+      models.llmModels.push({
+        model: llmModel.model,
+        maxContext: llmModel.maxContext,
+        maxTemperature: llmModel.maxTemperature,
+      });
+    }
   });
   res.data.data.vectorModels.map((vectorModel: any) => {
-    models.embeddingModels.push(vectorModel.model);
+    if (vectorModel.aiSearch) {
+      models.embeddingModels.push(vectorModel.model);
+    }
   });
   return models;
 };
