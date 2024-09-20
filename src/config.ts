@@ -12,6 +12,7 @@ interface Config {
     MONGODB_URI: string;
     MONGODB_MAX_LINK: string;
     JWT_SIGN_KEY: string;
+    BASE_PATH: string;
   };
   API_KEYS: {
     OPENAI: string;
@@ -36,6 +37,8 @@ const loadConfig = () =>
   ) as any as Config;
 
 export const getPort = () => loadConfig().GENERAL.PORT;
+
+export const getBasePath = () => loadConfig().GENERAL.BASE_PATH;
 
 export const getSimilarityMeasure = () =>
   loadConfig().GENERAL.SIMILARITY_MEASURE;

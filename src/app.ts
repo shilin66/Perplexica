@@ -3,7 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import http from 'http';
 import routes from './routes';
-import { getPort } from './config';
+import { getBasePath, getPort } from './config';
 import logger from './utils/logger';
 import { connectMongo } from './db/mongodb/init';
 
@@ -19,8 +19,8 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 
-app.use('/api', routes);
-app.get('/api', (_, res) => {
+app.use(`/${getBasePath()}/api`, routes);
+app.get(`/${getBasePath()}/api`, (_, res) => {
   res.status(200).json({ status: 'ok' });
 });
 
