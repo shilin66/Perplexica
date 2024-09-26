@@ -10,3 +10,13 @@ ANTHROPIC = "" # Anthropic API key - sk-ant-1234567890abcdef1234567890abcdef
 [API_ENDPOINTS]
 SEARXNG = "http://localhost:32768" # SearxNG API URL
 OLLAMA = "" # Ollama API URL - http://host.docker.internal:11434
+FASTGPT_URL = ""
+OPENAI_BASE_URL = ""
+
+[GENERAL]
+PORT = 3001 # Port to run the server on
+SIMILARITY_MEASURE = "cosine" # "cosine" or "dot"
+MONGODB_URI = "mongodb://username:password@ip:port/perplexica?authSource=admin&directConnection=true"
+MONGODB_MAX_LINK= 30
+JWT_SIGN_KEY = 'any'
+BASE_PATH = "perplexica"

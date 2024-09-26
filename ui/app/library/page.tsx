@@ -2,10 +2,11 @@
 
 import DeleteChat from '@/components/DeleteChat';
 import { formatTimeDifference } from '@/lib/utils';
-import { BookOpenText, ClockIcon, Delete, ScanEye } from 'lucide-react';
+import { BookOpenText, ClockIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { useGlobalContext } from '@/app/GlobalContext';
 
 export interface Chat {
   id: string;
@@ -17,12 +18,13 @@ export interface Chat {
 const Page = () => {
   const [chats, setChats] = useState<Chat[]>([]);
   const [loading, setLoading] = useState(true);
+  const { pConfig } = useGlobalContext();
 
   useEffect(() => {
     const fetchChats = async () => {
       setLoading(true);
 
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/chats`, {
+      const res = await fetch(`${pConfig?.apiUrl}/chats`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -37,7 +39,6 @@ const Page = () => {
       } else {
         setChats([]);
         setLoading(false);
-        console.log(data); // 打印解析后的数据
         toast.error('Failed query chat');
       }
       setLoading(false);

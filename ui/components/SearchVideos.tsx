@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Lightbox, { GenericSlide, VideoSlide } from 'yet-another-react-lightbox';
 import 'yet-another-react-lightbox/styles.css';
 import { Message } from './ChatWindow';
+import { useGlobalContext } from '@/app/GlobalContext';
 
 type Video = {
   url: string;
@@ -31,6 +32,7 @@ const Searchvideos = ({
   query: string;
   chat_history: Message[];
 }) => {
+  const { pConfig } = useGlobalContext();
   const [videos, setVideos] = useState<Video[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
@@ -46,21 +48,18 @@ const Searchvideos = ({
             const chatModelProvider = localStorage.getItem('chatModelProvider');
             const chatModel = localStorage.getItem('chatModel');
 
-            const res = await fetch(
-              `${process.env.NEXT_PUBLIC_API_URL}/videos`,
-              {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  query: query,
-                  chat_history: chat_history,
-                  chat_model_provider: chatModelProvider,
-                  chat_model: chatModel,
-                }),
+            const res = await fetch(`${pConfig?.apiUrl}/videos`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
               },
-            );
+              body: JSON.stringify({
+                query: query,
+                chat_history: chat_history,
+                chat_model_provider: chatModelProvider,
+                chat_model: chatModel,
+              }),
+            });
 
             const data = await res.json();
 

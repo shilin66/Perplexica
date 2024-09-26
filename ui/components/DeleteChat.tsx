@@ -3,6 +3,7 @@ import { Dialog, Transition } from '@headlessui/react';
 import { Fragment, useState } from 'react';
 import { toast } from 'sonner';
 import { Chat } from '@/app/library/page';
+import { useGlobalContext } from '@/app/GlobalContext';
 
 const DeleteChat = ({
   chatId,
@@ -13,22 +14,20 @@ const DeleteChat = ({
   chats: Chat[];
   setChats: (chats: Chat[]) => void;
 }) => {
+  const { pConfig } = useGlobalContext();
   const [confirmationDialogOpen, setConfirmationDialogOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const handleDelete = async () => {
     setLoading(true);
     try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/chats/${chatId}`,
-        {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json',
-            token: localStorage.getItem('token') || '',
-          },
+      const res = await fetch(`${pConfig?.apiUrl}/chats/${chatId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          token: localStorage.getItem('token') || '',
         },
-      );
+      });
 
       if (res.status != 200) {
         toast.error('Failed delete chat');

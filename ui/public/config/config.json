@@ -1,0 +1,5 @@
+{
+  "apiUrl": "http://localhost:3001/perplexica/api",
+  "wsUrl": "ws://localhost:3001/perplexica",
+  "basePath": "pSearch"
+}

@@ -18,7 +18,6 @@ const MessageSearchPlan = ({ searchPlan }: { searchPlan: {} }) => {
         markdown += `### ${replaceKey(key)}\n- ${obj[key]}\n\n`;
       }
     }
-    console.log(markdown);
     return markdown;
   };
 

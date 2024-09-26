@@ -1,10 +1,14 @@
 import { Message } from '@/components/ChatWindow';
+import { ContextConfig } from '@/app/GlobalContext';
 
-export const getSuggestions = async (chatHisory: Message[]) => {
+export const getSuggestions = async (
+  chatHisory: Message[],
+  pConfig: ContextConfig | null,
+) => {
   const chatModel = localStorage.getItem('chatModel');
   const chatModelProvider = localStorage.getItem('chatModelProvider');
 
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/suggestions`, {
+  const res = await fetch(`${pConfig?.apiUrl}/suggestions`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

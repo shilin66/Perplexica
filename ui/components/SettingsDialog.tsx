@@ -8,6 +8,7 @@ import React, {
   useState,
 } from 'react';
 import { Slider } from 'antd';
+import { useGlobalContext } from '@/app/GlobalContext';
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {}
 
@@ -85,12 +86,13 @@ const SettingsDialog = ({
   const [contextSize, setContextSize] = useState<number>(8192);
   const [isLoading, setIsLoading] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  const { pConfig } = useGlobalContext();
 
   useEffect(() => {
     if (isOpen) {
       const fetchConfig = async () => {
         setIsLoading(true);
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/config`, {
+        const res = await fetch(`${pConfig?.apiUrl}/config`, {
           headers: {
             'Content-Type': 'application/json',
           },

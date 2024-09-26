@@ -37,7 +37,6 @@ const MessageTask = ({ executePlan }: { executePlan: any }) => {
   };
 
   useEffect(() => {
-    console.log('executePlan===', JSON.stringify(executePlan));
     setItems(covert2timeline(executePlan));
   }, [executePlan]);
 

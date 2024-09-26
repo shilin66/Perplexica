@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { useSearchParams } from 'next/navigation';
 import { getSuggestions } from '@/lib/actions';
 import Error from 'next/error';
+import { ContextConfig, useGlobalContext } from '@/app/GlobalContext';
 
 export type Message = {
   messageId: string;
@@ -30,7 +31,7 @@ const useSocket = (
   setError: (error: boolean) => void,
 ) => {
   const [ws, setWs] = useState<WebSocket | null>(null);
-
+  const { pConfig } = useGlobalContext();
   useEffect(() => {
     if (!ws) {
       let lastActivity = Date.now();
@@ -73,7 +74,6 @@ const useSocket = (
         }
       };
       const connectWs = async () => {
-        console.log('fast token', localStorage.getItem('token'));
         let chatModel = localStorage.getItem('chatModel');
         let temperature = localStorage.getItem('temperature');
         let contextSize = localStorage.getItem('contextSize');
@@ -83,14 +83,11 @@ const useSocket = (
           'embeddingModelProvider',
         );
 
-        const providers = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/models`,
-          {
-            headers: {
-              'Content-Type': 'application/json',
-            },
+        const providers = await fetch(`${pConfig?.apiUrl}/models`, {
+          headers: {
+            'Content-Type': 'application/json',
           },
-        ).then(async (res) => await res.json());
+        }).then(async (res) => await res.json());
 
         if (
           !chatModel ||
@@ -283,7 +280,7 @@ const useSocket = (
         console.log('[DEBUG] closed');
       }
     };
-  }, [ws, url, setIsWSReady, setError]);
+  }, [ws, url, setIsWSReady, setError, pConfig?.apiUrl]);
 
   return ws;
 };
@@ -295,17 +292,15 @@ const loadMessages = async (
   setChatHistory: (history: [string, string][]) => void,
   setFocusMode: (mode: string) => void,
   setNotFound: (notFound: boolean) => void,
+  pConfig: ContextConfig | null,
 ) => {
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL}/chats/${chatId}`,
-    {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        token: localStorage.getItem('token') || '',
-      },
+  const res = await fetch(`${pConfig?.apiUrl}/chats/${chatId}`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      token: localStorage.getItem('token') || '',
     },
-  );
+  });
 
   if (res.status !== 200) {
     setNotFound(true);
@@ -338,6 +333,7 @@ const loadMessages = async (
 };
 
 const ChatWindow = ({ id }: { id?: string }) => {
+  const { pConfig } = useGlobalContext();
   const searchParams = useSearchParams();
   const initialMessage = searchParams.get('q');
 
@@ -348,11 +344,7 @@ const ChatWindow = ({ id }: { id?: string }) => {
   const [isReady, setIsReady] = useState(false);
 
   const [isWSReady, setIsWSReady] = useState(false);
-  const ws = useSocket(
-    process.env.NEXT_PUBLIC_WS_URL!,
-    setIsWSReady,
-    setHasError,
-  );
+  const ws = useSocket(pConfig?.wsUrl!, setIsWSReady, setHasError);
 
   const [loading, setLoading] = useState(false);
   const [messageAppeared, setMessageAppeared] = useState(false);
@@ -382,6 +374,7 @@ const ChatWindow = ({ id }: { id?: string }) => {
         setChatHistory,
         setFocusMode,
         setNotFound,
+        pConfig,
       );
     } else if (!chatId) {
       setNewChatCreated(true);
@@ -505,7 +498,6 @@ const ChatWindow = ({ id }: { id?: string }) => {
 
       if (data.type === 'doSearch') {
         const searchResult = data.data;
-        console.log('[DEBUG] searchResult=>' + JSON.stringify(searchResult));
         executePlan?.map((plan: any) => {
           if (plan.planName === searchResult.planName) {
             plan.searchResult = searchResult.searchResult;
@@ -525,7 +517,6 @@ const ChatWindow = ({ id }: { id?: string }) => {
 
       if (data.type === 'planAnswer') {
         const planAnswer = data.data;
-        console.log('[DEBUG] planAnswer=>' + JSON.stringify(planAnswer));
         executePlan?.map((plan: any) => {
           if (plan.planName === planAnswer.planName) {
             if (planAnswer.status && planAnswer.status === 'finished') {
@@ -651,7 +642,10 @@ const ChatWindow = ({ id }: { id?: string }) => {
           lastMsg.sources.length > 0 &&
           !lastMsg.suggestions
         ) {
-          const suggestions = await getSuggestions(messagesRef.current);
+          const suggestions = await getSuggestions(
+            messagesRef.current,
+            pConfig,
+          );
           setMessages((prev) =>
             prev.map((msg) => {
               if (msg.messageId === lastMsg.messageId) {
