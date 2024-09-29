@@ -77,39 +77,43 @@ const MindMap = ({
   };
   // 下载功能实现
   const handleDownloadClick = () => {
-    if (svgRef.current) {
-      const svgWidth = svgRef.current.clientWidth;
-      const svgHeight = svgRef.current.clientHeight;
-      const scale = isExpanded ? 2 : 4; // 放大两倍
-      const canvasWidth = svgWidth * scale;
-      const canvasHeight = svgHeight * scale;
-      const transform = `scale(${scale}) translate(-50%, -50%)`;
+    mmRef.current?.fit().then(() => {
+      if (svgRef.current) {
+        const svgWidth = svgRef.current.clientWidth;
+        const svgHeight = svgRef.current.clientHeight;
+        const scale = isExpanded ? 2 : 4; // 放大两倍
+        const canvasWidth = svgWidth * scale;
+        const canvasHeight = svgHeight * scale;
+        const transform = `scale(${scale}) translate(-50%, -50%)`;
 
-      // 创建一个临时div元素用于渲染
-      const div = document.createElement('div');
-      div.style.width = `${canvasWidth}px`;
-      div.style.height = `${canvasHeight}px`;
-      div.style.position = 'relative';
-      div.style.left = '50%';
-      div.style.top = '50%';
-      div.style.transform = transform;
-      div.style.transformOrigin = 'center center';
-      div.style.margin = 'auto';
-      div.appendChild(svgRef.current.cloneNode(true));
-      document.body.appendChild(div);
+        // 创建一个临时div元素用于渲染
+        const div = document.createElement('div');
+        div.style.width = `${canvasWidth}px`;
+        div.style.height = `${canvasHeight}px`;
+        div.style.position = 'relative';
+        div.style.left = '50%';
+        div.style.top = '50%';
+        div.style.transform = transform;
+        div.style.transformOrigin = 'center center';
+        div.style.margin = 'auto';
+        div.appendChild(svgRef.current.cloneNode(true));
+        document.body.appendChild(div);
 
-      html2canvas(div, {
-        width: canvasWidth,
-        height: canvasHeight,
-        useCORS: true,
-        logging: true,
-      }).then((canvas) => {
-        canvas.toBlob((blob) => {
-          if (!blob) return;
-          saveAs(blob, 'mindmap.png');
+        html2canvas(div, {
+          width: canvasWidth,
+          height: canvasHeight,
+          useCORS: true,
+          logging: true,
+        }).then((canvas) => {
+          canvas.toBlob((blob) => {
+            if (blob) {
+              saveAs(blob, 'mindmap.png');
+            }
+            document.body.removeChild(div);
+          });
         });
-      });
-    }
+      }
+    });
   };
   return (
     <>
