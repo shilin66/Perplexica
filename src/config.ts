@@ -18,6 +18,7 @@ interface Config {
     OPENAI: string;
     GROQ: string;
     ANTHROPIC: string;
+    FASTGPT: string;
   };
   API_ENDPOINTS: {
     SEARXNG: string;
@@ -48,6 +49,8 @@ export const getOpenaiApiKey = () => loadConfig().API_KEYS.OPENAI;
 export const getGroqApiKey = () => loadConfig().API_KEYS.GROQ;
 
 export const getAnthropicApiKey = () => loadConfig().API_KEYS.ANTHROPIC;
+
+export const getFastGptApiKey = () => loadConfig().API_KEYS.FASTGPT;
 
 export const getSearxngApiEndpoint = () => loadConfig().API_ENDPOINTS.SEARXNG;
 

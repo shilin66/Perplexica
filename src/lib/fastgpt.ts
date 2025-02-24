@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { getFastGptEndpoint } from '../config';
+import {getFastGptApiKey, getFastGptEndpoint} from '../config';
 
 export type Models = {
   llmModels: string[];
@@ -9,23 +9,28 @@ export type Models = {
 export const getFastGptInitData = async () => {
   const res = await axios.get(
     getFastGptEndpoint() + '/api/common/system/getInitData',
+    {
+      headers: {
+        Authorization: 'Bearer ' + getFastGptApiKey()
+      }
+    }
   );
   const models = {
     llmModels: [],
     embeddingModels: [],
   };
-  res.data.data.llmModels.map((llmModel: any) => {
-    if (llmModel.aiSearch) {
-      models.llmModels.push({
-        model: llmModel.model,
-        maxContext: llmModel.maxContext,
-        maxTemperature: llmModel.maxTemperature,
-      });
-    }
-  });
-  res.data.data.vectorModels.map((vectorModel: any) => {
-    if (vectorModel.aiSearch) {
-      models.embeddingModels.push(vectorModel.model);
+
+  res.data.data.activeModelList.forEach((model: any) => {
+    if (model.aiSearch) {
+      if (model.type === 'embedding') {
+        models.embeddingModels.push(model.model);
+      } else if (model.type === 'llm') {
+        models.llmModels.push({
+          model: model.model,
+          maxContext: model.maxContext,
+          maxTemperature: model.maxTemperature,
+        });
+      }
     }
   });
   return models;
