@@ -4,11 +4,17 @@ import { getAvailableChatModelProviders } from '../lib/providers';
 import { HumanMessage, AIMessage } from '@langchain/core/messages';
 import logger from '../utils/logger';
 import handleVideoSearch from '../agents/videoSearchAgent';
+import Cookie from "cookie";
+import {verifyToken} from "../utils/token";
 
 const router = express.Router();
 
 router.post('/', async (req, res) => {
   try {
+    const { token, cookie } = req.headers as { token: string, cookie:string };
+    const cookies = Cookie.parse(cookie || '');
+    const cookieToken = token || cookies['fastgpt_token'];
+    await verifyToken(cookieToken);
     let { query, chat_history, chat_model_provider, chat_model } = req.body;
 
     chat_history = chat_history.map((msg: any) => {

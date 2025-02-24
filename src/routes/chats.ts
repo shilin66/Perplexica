@@ -3,14 +3,17 @@ import logger from '../utils/logger';
 import { MongoChats } from '../db/mongodb/ChatsSchema';
 import { MongoMessages } from '../db/mongodb/Messages';
 import { verifyToken } from '../utils/token';
+import Cookie from "cookie";
 
 const router = express.Router();
 
 router.get('/', async (req, res) => {
   try {
     // let chats = await db.query.chats.findMany();
-    const { token } = req.headers as { token: string };
-    const { userId, isRoot } = await verifyToken(token);
+    const { token, cookie } = req.headers as { token: string, cookie:string };
+    const cookies = Cookie.parse(cookie || '');
+    const cookieToken = token || cookies['fastgpt_token'];
+    const { userId, isRoot } = await verifyToken(cookieToken);
     let chats = await MongoChats.find({ userId }).lean();
     // 将 _id 转换为 id
     // 转换 _id 为 id
@@ -24,7 +27,7 @@ router.get('/', async (req, res) => {
     return res.status(200).json({ chats: chats });
   } catch (err) {
     res.status(500).json({ message: 'An error has occurred.' });
-    logger.error(`Error in getting chats: ${err.message}`);
+    logger.error(`Error in getting chats: ${err}`);
   }
 });
 
@@ -33,8 +36,10 @@ router.get('/:id', async (req, res) => {
     // const chatExists = await db.query.chats.findFirst({
     //   where: eq(chats.id, req.params.id),
     // });
-    const { token } = req.headers as { token: string };
-    const { userId, isRoot } = await verifyToken(token);
+    const { token, cookie } = req.headers as { token: string, cookie:string };
+    const cookies = Cookie.parse(cookie || '');
+    const cookieToken = token || cookies['fastgpt_token'];
+    const { userId, isRoot } = await verifyToken(cookieToken);
     const chatExists = await MongoChats.findOne({
       _id: req.params.id,
       userId,
@@ -77,8 +82,10 @@ router.delete(`/:id`, async (req, res) => {
     // if (!chatExists) {
     //   return res.status(404).json({message: 'Chat not found'});
     // }
-    const { token } = req.headers as { token: string };
-    const { userId, isRoot } = await verifyToken(token);
+    const { token, cookie } = req.headers as { token: string, cookie:string };
+    const cookies = Cookie.parse(cookie || '');
+    const cookieToken = token || cookies['fastgpt_token'];
+    const { userId, isRoot } = await verifyToken(cookieToken);
     const result = await MongoChats.findOneAndDelete({
       _id: req.params.id,
       userId,

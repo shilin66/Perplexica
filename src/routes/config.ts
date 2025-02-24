@@ -7,10 +7,16 @@ import {
   updateConfig,
 } from '../config';
 import { getFastGptInitData } from '../lib/fastgpt';
+import Cookie from "cookie";
+import {verifyToken} from "../utils/token";
 
 const router = express.Router();
 
-router.get('/', async (_, res) => {
+router.get('/', async (req, res) => {
+  const { token, cookie } = req.headers as { token: string, cookie:string };
+  const cookies = Cookie.parse(cookie || '');
+  const cookieToken = token || cookies['fastgpt_token'];
+  await verifyToken(cookieToken);
   const config = {};
 
   config['chatModelProviders'] = {};
@@ -36,6 +42,10 @@ router.get('/', async (_, res) => {
 });
 
 router.post('/', async (req, res) => {
+  const { token, cookie } = req.headers as { token: string, cookie:string };
+  const cookies = Cookie.parse(cookie || '');
+  const cookieToken = token || cookies['fastgpt_token'];
+  await verifyToken(cookieToken);
   const config = req.body;
 
   const updatedConfig = {

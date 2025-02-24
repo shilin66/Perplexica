@@ -8,7 +8,7 @@ export const verifyToken = async (
   return new Promise((resolve, reject) => {
     jwt.verify(token, signKey, (err, decoded: any) => {
       if (err || !decoded?.userId) {
-        return reject('Invalid token');
+        return reject(new Error('Invalid token'));
       }
       resolve({
         userId: decoded.userId,
